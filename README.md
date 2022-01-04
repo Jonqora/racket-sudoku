@@ -4,21 +4,22 @@ Playable sudoku client written as a HtDW world program in Racket ISL
 --------------------------------------------------------------------------------
 
 ## About
-I developed this program as a culmination of all design patterns learned in 
-Computer Science 110 at UBC. 
+I developed this program as a culmination of all design patterns learned after 
+completing a course in Systematic Program Design at UBC. That curriculum (CPSC 
+110) is based on [How To Design Programs](http://htdp.org/).
 
 1. The earliest roots of the sudoku solving algorithm used in this code were 
-from a backtracking search problem taught in 110 instructional materials. The 
+from a backtracking search problem taught in class instructional materials. The 
 original problem used a rudimentary brute-force search tree.
 
-2. I accepted an extra challenge to redesign this sudoku solver algorithm more 
-efficiently using constraint sets. Redesigning the data types and functions 
-allowed the new solver algorithm to become much more efficient. 
+2. During class term, I accepted an extra challenge to redesign the same solver 
+algorithm using constraint sets. Redesigning the data types and functions this 
+way allowed the new algorithm to become much more efficient. 
 
-3. For this project, I designed and built a fully playable sudoku game GUI 
-that uses the constraint set solver algorithm. The full game includes several 
-features that make use of the algorithm's constraint sets (e.g. autosolve mode, 
-hint system, error tracking, option display...)
+3. For this current project after term ended, I designed and built a fully 
+playable sudoku game GUI that employs the constraint set solver algorithm. My 
+full game includes several features that make use of the algorithm's constraint 
+sets (e.g. autosolve mode, hint system, error tracking, option display...)
 
 ## User Information
 ### COMPATIBILITY
