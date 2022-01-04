@@ -633,6 +633,103 @@
          ALL-POS)))
 
 
+(@htdf constrain-square)
+(@signature SmartBoard Pos -> SmartBoard)
+;; produce SmartBoard with unallowed options removed from (listof Val) at Pos
+;; ASSUME: Pos contains a (listof Val), not a Val
+(check-expect (constrain-square (append (list 5 (list 3) (list 9))
+                                        (rest (rest (rest SB5s))))
+                                2)
+              (append (list 5 (list 3) (list 9))
+                      (rest (rest (rest SB5s)))))
+(check-expect (constrain-square (append (list 5 ALL-VALS (list 9))
+                                        (rest (rest (rest SB5s))))
+                                1)
+              (append (list 5 (list 3) (list 9))
+                      (rest (rest (rest SB5s)))))
+
+;(define (constrain-square sb p0) sb)  ;stub
+
+(@template use-abstract-fn fn-composition)
+(define (constrain-square sb p0)
+  (local [(define not-allowed
+            (filter number?
+                    (map (λ (p) (list-ref sb p))
+                         (list-ref NEIGHBORS p0))))
+          (define constraint-set
+            (filter (λ (n) (not (member n not-allowed)))
+                    (list-ref sb p0)))]
+    (append (take sb p0)
+            (list constraint-set)
+            (drop sb (add1 p0)))))
+
+
+
+(@htdf restore-options)
+(@signature Val Pos SmartBoard -> SmartBoard)
+;; produce SmartBoard with Val added if missing to (listof Val) NEIGHBORS of Pos
+(check-expect (restore-options 2 10
+                               (list N2 N2 N2 A  A  A  A  A  A
+                                     N2 A  N2 N2 N2 N2 N2 N2 N2
+                                     N2 N2 N2 A  A  A  A  A  2
+                                     A  N2 A  A  A  A  A  A  A
+                                     A  N2 A  A  A  A  A  A  A
+                                     A  N2 A  A  A  A  A  A  A
+                                     A  N2 A  A  A  A  A  A  A
+                                     A  N2 A  A  A  A  A  A  A
+                                     A  N2 A  A  A  A  A  A  A))
+              (list A  A  A  A  A  A  A  A  A
+                    A  A  A  A  A  A  N2 N2 N2
+                    N2 N2 N2 A  A  A  A  A  2
+                    A  A  A  A  A  A  A  A  A
+                    A  A  A  A  A  A  A  A  A
+                    A  A  A  A  A  A  A  A  A
+                    A  A  A  A  A  A  A  A  A
+                    A  A  A  A  A  A  A  A  A
+                    A  A  A  A  A  A  A  A  A))
+(check-expect (restore-options 9 72
+                               (list 1 A  A  A  A  A  A  A  A
+                                     2 A  A  A  A  A  A  A  A
+                                     3 A  A  A  A  A  A  A  A
+                                     4 A  A  A  A  A  A  A  A
+                                     5 A  A  A  A  A  A  A  A
+                                     6 A  A  A  A  A  A  A  A
+                                     7 N9 N9 A  A  A  A  A  A
+                                     8 N9 N9 A  A  A  A  A  A
+                                     A N9 N9 N9 N9 N9 N9 N9 N9))
+              (list 1 A  A  A  A  A  A  A  A
+                    2 A  A  A  A  A  A  A  A
+                    3 A  A  A  A  A  A  A  A
+                    4 A  A  A  A  A  A  A  A
+                    5 A  A  A  A  A  A  A  A
+                    6 A  A  A  A  A  A  A  A
+                    7 A  A  A  A  A  A  A  A
+                    8 A  A  A  A  A  A  A  A
+                    A A  A  A  A  A  A  A  A))
+;(define (restore-options val pos sb) sb)  ;stub
+
+(@template use-abstract-fn fn-composition)
+(define (restore-options val p0 sb)
+  (local [(define this-neighbors (list-ref NEIGHBORS p0))
+          ;; produce true if val is allowable at given pos
+          (define (allowed-val? p)
+            (local [(define sq-neighbors (list-ref NEIGHBORS p))]
+              (not (ormap (λ (p) (equal? (list-ref sb p) val))
+                          sq-neighbors))))
+          (define (add-val lov)
+            (sort (cons val lov) <))]
+    
+    (map (lambda (p1)
+           (local [(define sq (list-ref sb p1))]
+             (if (and (list? sq)
+                      (member p1 this-neighbors)
+                      (not (member? val sq))
+                      (allowed-val? p1))
+                 (add-val sq)
+                 sq)))
+         ALL-POS)))
+
+
 (@htdf next-smartboards)
 (@signature SmartBoard -> (listof SmartBoard))
 ;; produce next boards by filling most constrained space with each Val option
@@ -812,16 +909,39 @@
 (define SML-GRID-COLOR "gray")
 (define BIG-GRID-COLOR "dark gray")
 
-(define SQ-COLOR "white")
+(define SQUARE-COLOR "white")
+(define NOPE-COLOR "light coral")
 
+(define MTS-COLOR "cornflower blue")
+
+(define BUTTON-TEXT-COLOR "black")
 
 ;; --- Sizes ---
 (define CELL-W 16)
 (define SQUARE-W (* 3 CELL-W))
 (define BOARD-W (* 9 SQUARE-W))
+(define BUTTONS-W (* 4 SQUARE-W))
 
-(define TOTAL-H (* 11 SQUARE-W))
-(define TOTAL-W (* 16 SQUARE-W))
+(define BORDER-TB SQUARE-W)
+(define BORDER-LR SQUARE-W)
+(define BORDER-MID SQUARE-W)
+(define TOTAL-H (+ BORDER-TB BOARD-W BORDER-TB))
+(define TOTAL-W (+ BORDER-LR BOARD-W BORDER-MID BUTTONS-W BORDER-LR))
+(define CTR-X (/ TOTAL-W 2))
+(define CTR-Y (/ TOTAL-H 2))
+
+(define BOARD-LEF BORDER-LR)
+(define BOARD-RIG (+ BORDER-LR BOARD-W))
+(define BOARD-TOP BORDER-TB)
+(define BOARD-BOT (+ BORDER-TB BOARD-W))
+(define BUTTONS-LEF (+ BORDER-LR BOARD-W BORDER-MID))
+(define BUTTONS-RIG (+ BORDER-LR BOARD-W BORDER-MID BUTTONS-W))
+(define BUTTONS-TOP BORDER-TB)
+(define BUTTONS-BOT (+ BORDER-TB BOARD-W))
+
+(define BUTTON-H (floor (* 0.9 SQUARE-W)))
+(define BUTTON-MD (- SQUARE-W BUTTON-H))
+(define BUTTON-TEXT-SIZE (floor (* 0.65 BUTTON-H)))
 
 (define TINY-TEXT-SIZE (floor (* 0.8 CELL-W)))
 (define SQUARE-TEXT-SIZE (floor (* 0.8 SQUARE-W)))
@@ -833,7 +953,7 @@
 
 
 ;; --- Components ---
-(define MTS (empty-scene TOTAL-W TOTAL-H "white"))
+(define MTS (empty-scene TOTAL-W TOTAL-H MTS-COLOR))
 
 (define SQUARE (square SQUARE-W "outline" SML-LINE))
 (define BOX (square (* 3 SQUARE-W) "outline" BIG-LINE))
@@ -858,24 +978,142 @@
 ;; =================
 ;; Data definitions:
 
+
+(@htdd ButtonID)
+;; ButtonID is String
+;; INTERP. Unique identifer strings for buttons
+(define BID0 "b-undo")
+(define BID1 "b-hint")
+
+
+(@htdd Button)
+(define-struct button [id label on/click pressed? color click hover])
+;; Button is (make-button ButtonID String (Game -> Game)
+;;                        (Game -> Boolean) Color Color Color)
+;; INTERP. a UI button with properties:
+;;    id       - unique ButtonID String identifier
+;;    label    - String name to display
+;;    on/click - function called when button is pressed
+;;    pressed? - function that produces true if button should render pressed
+;;    color    - normal button Color
+;;    click    - button Color when pressed
+;;    hover    - button Color when hover
+
+(define B-UNDO (make-button "b-undo" "Undo"
+                            (λ (g) (click-undo g)) (λ (_) false)
+                            "Tomato" "OrangeRed" "LightCoral"))
+(define B-HINT (make-button "b-hint" "Hint?"
+                            (λ (g) (click-hint g)) (λ (_) false)
+                            "Orange" "DarkOrange" "NavajoWhite"))
+(define B-SOLVE (make-button "b-solve" "Auto-Solve"
+                             (λ (g) (click-solve g))
+                             (λ (g) (string=? (game-mode g) SOLVE))
+                             "LimeGreen" "ForestGreen" "Chartreuse"))
+(define B-SHOW-CH (make-button "b-show-ch" "Show Choices"
+                               (λ (g) (click-choices g))
+                               (λ (g) (ops-showchoices (game-options g)))
+                               "DeepSkyBlue" "DodgerBlue" "SkyBlue"))
+(define B-SHOW-ER (make-button "b-show-er" "Show Errors"
+                               (λ (g) (click-errors g))
+                               (λ (g) (ops-showerrors (game-options g)))
+                               "Tomato" "OrangeRed" "LightCoral"))
+(define B-WRITE (make-button "b-write" "Write"
+                             (λ (g) (click-write g))
+                             (λ (g) (string=? (game-mode g) WRITE))
+                             "CornflowerBlue" "RoyalBlue" "LightSkyBlue"))
+(define B-ERASE (make-button "b-erase" "Erase"
+                             (λ (g) (click-erase g))
+                             (λ (g) (string=? (game-mode g) ERASE))
+                             "Violet" "HotPink" "LightPink"))
+
+(define LIST-BUTTONS (list B-UNDO B-HINT B-SOLVE
+                           B-SHOW-CH B-SHOW-ER B-WRITE B-ERASE))
+(define NUM-BUTTONS (length LIST-BUTTONS))
+
+
+(@htdd ButtonState)
+;; ButtonState is one of: "none", "click", "hover"
+;; INTERP. The interaction state of a UI button. "none" is normal state
+(define NONE "none")
+(define CLICK "click")
+(define HOVER "hover")
+
+(define (fn-for-buttonstate bs)
+  (cond [(string=? "none" bs) (...)]
+        [(string=? "click" bs) (...)]
+        [(string=? "hover" bs) (...)]))
+
+
+(@htdd ButtonsData)
+(define-struct btndata [id state])
+;; ButtonsData is (listof ButtonID)
+;!!! finalize
+;; ButtonsData is (listof (make-btndata ButtonID ButtonState))
+;; INTERP. List of all buttons in a game with their current states
+;;     id    - unique identifier for a button used in game
+;;     state - current state of a button ("none" "click" "hover")
+;; Note: is an ordered list (rendered top to bottom) of all buttons used in game
+(define BTNS-W
+  (list "b-solve" "b-hint" "b-undo" "b-show-ch" "b-show-er" "b-write" "b-erase")
+  #;  (list (make-btndata "b-solve" "none")
+            (make-btndata "b-hint" "none")
+            (make-btndata "b-undo" "none")
+            (make-btndata "b-show-ch" "none")
+            (make-btndata "b-show-er" "none")
+            (make-btndata "b-write" "click")
+            (make-btndata "b-erase" "none")))
+(define BTNS-E 
+  (list "b-solve" "b-hint" "b-undo" "b-show-ch" "b-show-er" "b-write" "b-erase")
+  #; (list (make-btndata "b-solve" "none")
+           (make-btndata "b-hint" "none")
+           (make-btndata "b-undo" "none")
+           (make-btndata "b-show-ch" "none")
+           (make-btndata "b-show-er" "none")
+           (make-btndata "b-write" "none")
+           (make-btndata "b-erase" "click")))
+(define BTNS-S 
+  (list "b-solve" "b-hint" "b-undo" "b-show-ch" "b-show-er" "b-write" "b-erase")
+  #; (list (make-btndata "b-solve" "click")
+           (make-btndata "b-hint" "none")
+           (make-btndata "b-undo" "none")
+           (make-btndata "b-show-ch" "none")
+           (make-btndata "b-show-er" "none")
+           (make-btndata "b-write" "none")
+           (make-btndata "b-erase" "none")))
+(define BTNS0
+  (list "b-undo" "b-hint" "b-show-ch" "b-write")
+  #; (list (make-btndata "b-undo" "none")
+           (make-btndata "b-hint" "hover")
+           (make-btndata "b-show-ch" "click")
+           (make-btndata "b-write" "click")))
+(define BTNS1 
+  (list "b-undo" "b-hint" "b-solve" "b-show-ch" "b-show-er" "b-write" "b-erase")
+  #; (list (make-btndata "b-undo" "none")
+           (make-btndata "b-hint" "hover")
+           (make-btndata "b-solve" "none")
+           (make-btndata "b-show-ch" "click")
+           (make-btndata "b-show-er" "none")
+           (make-btndata "b-write" "click")
+           (make-btndata "b-erase" "none")))
+
+
 (@htdd Mode)
 ;; Mode is one of:
-;;   "choose"
+;;   "write"
 ;;   "erase"
 ;;   "solve"
 ;; INTERP. Current selected game mode.
-;; "choose" allows to select number values for empty squares
+;; "write" allows to select number values for empty squares
 ;; "erase" allows to remove previously-added numbers
 ;; "solve" disables board interactions and shows steps for an automatic solve
-(define CHOOSE "choose")
+(define WRITE "write")
 (define ERASE "erase")
 (define SOLVE "solve")
 
 (define (fn-for-mode m)
-  (cond [(string=? m CHOOSE) (...)]
+  (cond [(string=? m WRITE) (...)]
         [(string=? m ERASE)  (...)]
         [(string=? m SOLVE)  (...)]))
-
 
 
 (@htdd Options)
@@ -887,20 +1125,35 @@
 (define OP00 (make-ops false false))
 (define OP01 (make-ops false true))
 (define OP10 (make-ops true  false))
+(define OP11 (make-ops true  true))
 
 (define (fn-for-ops o)
   (... (ops-showchoices o)
        (ops-showerrors o)))
 
 
+(@htdd Mouse)
+(define-struct ms [x y])
+;; Mouse is (make-ms Integer Integer)
+;; INTERP. Current x and y coordinates of the mouse. Used for hover position.
+
+(define M0 (make-ms 0 0))  ;top left
+(define M-P0 (make-ms BORDER-LR BORDER-TB))  ;board pos 0
+(define M-P8 (make-ms (+ BORDER-LR (* 8 SQUARE-W)) BORDER-TB))  ;board pos 8
+(define M-P72 (make-ms BORDER-LR (+ BORDER-TB (* 8 SQUARE-W))))  ;board pos 72
+(define M-B1 (make-ms BUTTONS-LEF BORDER-TB))  ;first button
+(define M-B2 (make-ms BUTTONS-LEF (+ BORDER-TB BUTTON-H BUTTON-MD)))  ;second
+(define M-B3 (make-ms BUTTONS-LEF (+ BORDER-TB (* 2 (+ BUTTON-H BUTTON-MD)))))
+
+
 
 (@htdd Game)
 (define-struct game [initial current solution
                              prev next errors
-                             mode options])
+                             mode options buttons mouse])
 ;; Game is (make-game SmartBoard SmartBoard SmartBoard
 ;;                    (listof SmartBoard) (listof SmartBoard) (listof Pos)
-;;                    Mode Options)
+;;                    Mode Options Mouse)
 ;; INTERP. the state of a playable Sudoku game
 ;;   initial  - SmartBoard of the starting board state
 ;;   current  - SmartBoard of the current board state
@@ -910,34 +1163,144 @@
 ;;              OR false if initial state has no solutions
 ;;   prev     - list of SmartBoards for the board states of all steps
 ;;              taken from initial to just before current
-;;   next     - list of Smartboards for all correct steps after current until
-;;              a correct solution is reached
+;;   next     - list of Smartboards for all correct steps after current (minus
+;;              any errors) until a correct solution is reached
+;;   errors   - a list of any Positions with numbers put there in error 
 ;;   mode     - current game mode Mode for interactions with the sudoku game
 ;;   options  - state of current selections for game options
+;;   buttons  - list of buttons used in game and their current states
+;;   mouse    - stored x,y coordinates of current mouse position
 
+(define MTG (make-game (make-list 81 empty)
+                       (make-list 81 empty)
+                       (make-list 81 empty)
+                       empty
+                       empty
+                       empty
+                       WRITE
+                       OP10
+                       BTNS0
+                       (make-ms -1 -1)))
 (define EASY (make-game (prep-smartboard SB4-raw)  ;initial
                         (prep-smartboard SB4-raw)  ;current
                         BD4s                  ;solution
                         empty                 ;prev
                         (solve-steps (prep-smartboard SB4-raw))  ;next
                         empty                 ;errors
-                        CHOOSE                ;mode
-                        OP00))                ;options
+                        WRITE                 ;mode
+                        OP00                  ;options
+                        BTNS-W                  ;buttons
+                        (make-ms -1 -1)))     ;mouse x y
+(define EASY-E (make-game (prep-smartboard SB4-raw) 
+                          (prep-smartboard SB4-raw)  
+                          BD4s                  
+                          empty                 
+                          (solve-steps (prep-smartboard SB4-raw))  
+                          empty                 
+                          ERASE                 
+                          OP00
+                          BTNS-E
+                          (make-ms -1 -1)))     
+(define EASY-S (make-game (prep-smartboard SB4-raw)  
+                          (prep-smartboard SB4-raw)  
+                          BD4s                  
+                          empty                 
+                          (solve-steps (prep-smartboard SB4-raw))  
+                          empty                 
+                          SOLVE                 
+                          OP00
+                          BTNS-S
+                          (make-ms -1 -1)))     
 (define HARD (make-game (prep-smartboard SB5-raw)
                         (prep-smartboard SB5-raw)
                         BD5s
                         empty
                         (solve-steps (prep-smartboard SB5-raw))
                         empty
-                        CHOOSE
-                        OP00))
+                        WRITE
+                        OP00
+                        BTNS-W
+                        (make-ms -1 -1)))
+(define HARD-E (make-game (prep-smartboard SB5-raw)
+                          (prep-smartboard SB5-raw)
+                          BD5s
+                          empty
+                          (solve-steps (prep-smartboard SB5-raw))
+                          empty
+                          ERASE
+                          OP00
+                          BTNS-E
+                          (make-ms -1 -1)))
+(define HARD-S (make-game (prep-smartboard SB5-raw)
+                          (prep-smartboard SB5-raw)
+                          BD5s
+                          empty
+                          (solve-steps (prep-smartboard SB5-raw))
+                          empty
+                          SOLVE
+                          OP00
+                          BTNS-S
+                          (make-ms -1 -1)))
+(define G5-ERR (make-game (prep-smartboard SB5-raw)
+                          (append (list 5 2 (list 9))
+                                  (rest (rest (rest SB5s))))
+                          SB5s
+                          (list (append (list 5 (list 3) (list 9))
+                                        (rest (rest (rest SB5s)))))
+                          (solve-steps (append (list 5 (list 3) (list 9))
+                                               (rest (rest (rest SB5s)))))
+                          (list 1)  ;has error
+                          SOLVE
+                          OP00
+                          BTNS-S
+                          (make-ms -1 -1)))
+(define G5-LAST2 (make-game (prep-smartboard SB5-raw)
+                            (append (list 5 (list 3) (list 9))
+                                    (rest (rest (rest SB5s))))
+                            SB5s
+                            empty
+                            (solve-steps (append (list 5 (list 3) (list 9))
+                                                 (rest (rest (rest SB5s)))))
+                            empty
+                            SOLVE
+                            OP00
+                            BTNS-S
+                            (make-ms -1 -1)))
+(define G5-LAST1 (make-game (prep-smartboard SB5-raw)
+                            (append (list 5 3 (list 9))
+                                    (rest (rest (rest SB5s))))
+                            SB5s
+                            (list (append (list 5 (list 3) (list 9))
+                                          (rest (rest (rest SB5s)))))
+                            (solve-steps (append (list 5 3 (list 9))
+                                                 (rest (rest (rest SB5s)))))
+                            empty
+                            SOLVE
+                            OP00
+                            BTNS-S
+                            (make-ms -1 -1)))
+(define G5-DONE-S (make-game (prep-smartboard SB5-raw)
+                             SB5s
+                             SB5s
+                             (list (append (list 5 3 (list 9))
+                                           (rest (rest (rest SB5s))))
+                                   (append (list 5 (list 3) (list 9))
+                                           (rest (rest (rest SB5s)))))
+                             empty
+                             empty
+                             SOLVE
+                             OP00
+                             BTNS-S
+                             (make-ms -1 -1)))
 
 
 
 ;; =================
 ;; Default Constants:
-(define DEFAULT-MODE CHOOSE)
+(define DEFAULT-MODE WRITE)
 (define DEFAULT-OPS OP00)
+(define DEFAULT-BUTTONS BTNS-W)
+(define DEFAULT-MOUSE (make-ms -1 -1))
 
 
 
@@ -956,7 +1319,7 @@
 
 (define (main g)
   (big-bang g                   ; Game
-    (on-tick   tock    0.25)    ; Game -> Game
+    (on-tick   tock)            ; Game -> Game
     (to-draw   render)          ; Game -> Image
     (on-mouse  handle-mouse)))  ; Game Integer Integer MouseEvent -> Game
 ;(on-key    ...)))  ; Game KeyEvent -> Game
@@ -965,11 +1328,12 @@
 (@htdf tock)
 (@signature Game -> Game)
 ;; produce the next sudoku board during automatic solving 
-;!!!
-(define (tock g) g)  ;stub
+(check-expect (tock EASY) EASY)
+(check-expect (tock G5-ERR) (solve-step G5-ERR))
+
+;(define (tock g) g)  ;stub
 
 (@template Game)
-#;
 (define (tock g)
   (cond [(string=? (game-mode g) SOLVE)
          (solve-step g)]
@@ -978,31 +1342,81 @@
 
 (@htdf render)
 (@signature Game -> Image)
-;; render ... 
-;!!!
+;; render the current game window
+(check-expect
+ (render EASY)
+ (underlay/align/offset "left" "top"
+                        MTS
+                        BORDER-LR
+                        BORDER-TB
+                        (beside (overlay MTBOARD
+                                         (render-board EASY))
+                                (rectangle SQUARE-W 0 "solid" "white")
+                                (render-buttons EASY))))
+(check-expect
+ (render HARD)
+ (underlay/align/offset "left" "top"
+                        MTS
+                        BORDER-LR
+                        BORDER-TB
+                        (beside (overlay MTBOARD
+                                         (render-board HARD))
+                                (rectangle SQUARE-W 0 "solid" "white")
+                                (render-buttons HARD))))
 ;(define (render g) empty-image)  ;stub
 
 (@template fn-composition)
 (define (render g)
-  (overlay (beside (overlay MTBOARD
-                            (render-board g))
-                   (rectangle SQUARE-W 0 "solid" "white")
-                   (render-buttons g))))
+  (underlay/align/offset "left" "top"
+                         MTS
+                         BORDER-LR
+                         BORDER-TB
+                         (beside (overlay MTBOARD
+                                          (render-board g))
+                                 (rectangle SQUARE-W 0 "solid" "white")
+                                 (render-buttons g))))
 
 
 (@htdf handle-mouse)
 (@signature Game Integer Integer MouseEvent -> Game)
 ;; update game state based on mouse input to board or buttons
-;!!!
-(define (handle-mouse g x y me) g)  ;stub
+(check-expect
+ (handle-mouse EASY (+ 1 BORDER-LR) (+ 2 BORDER-TB) "button-down")
+ (mouse-xy (+ 1 BORDER-LR) (+ 2 BORDER-TB) (board-click EASY 1 2)))
+(check-expect
+ (handle-mouse EASY (+ 2 BORDER-LR BOARD-W BORDER-MID) (+ 1 BORDER-TB)
+               "button-down")
+ (mouse-xy (+ 2 BORDER-LR BOARD-W BORDER-MID) (+ 1 BORDER-TB)
+           (buttons-click EASY 2 1)))
+(check-expect
+ (handle-mouse EASY (sub1 BORDER-LR) (sub1 BORDER-TB) "button-down")
+ (mouse-xy (sub1 BORDER-LR) (sub1 BORDER-TB) EASY))
+(check-expect
+ (handle-mouse EASY (+ 2 BORDER-LR) (+ 3 BORDER-TB) "move")
+ (mouse-xy (+ 2 BORDER-LR) (+ 3 BORDER-TB) (board-hover EASY 2 3)))
+(check-expect
+ (handle-mouse EASY (sub1 BORDER-LR) (sub1 BORDER-TB) "move")
+ (mouse-xy (sub1 BORDER-LR) (sub1 BORDER-TB) EASY))
+(check-expect
+ (handle-mouse EASY (add1 BORDER-LR) (add1 BORDER-TB) "drag")
+ (mouse-xy (add1 BORDER-LR) (add1 BORDER-TB) EASY))
 
+;(define (handle-mouse g x y me) g)  ;stub
 
 (@template MouseEvent)
-#;
 (define (handle-mouse g x y me)
-  (cond [(mouse=? me "button-down") (... g x y)]
-        [else
-         (... g x y)]))  ;hover behavior?
+  (local [(define updated-g (mouse-xy x y g))]
+    (cond [(mouse=? me "button-down")
+           (cond [(in-board?   x y)
+                  (board-click   updated-g (- x BOARD-LEF)   (- y BOARD-TOP))]
+                 [(in-buttons? x y)
+                  (buttons-click updated-g (- x BUTTONS-LEF) (- y BUTTONS-TOP))]
+                 [else updated-g])]
+          [(mouse=? me "move")
+           (cond [(in-board?   x y)
+                  (board-hover   updated-g (- x BOARD-LEF)   (- y BOARD-TOP))]
+                 [else updated-g])]
+          [else updated-g])))
 
 
 
@@ -1027,28 +1441,46 @@
                (solve-steps sb)  ;next
                empty             ;errors
                DEFAULT-MODE      ;mode
-               DEFAULT-OPS)))    ;options
+               DEFAULT-OPS       ;options
+               DEFAULT-BUTTONS   ;buttons
+               DEFAULT-MOUSE)))  ;mouse
 
 
 (@htdf solve-step)
 (@signature Game -> Game)
 ;; produce updated game after taking one next step towards known solution
-;!!!
-(define (solve-step g) g)  ;stub
+(check-expect (solve-step G5-ERR) G5-LAST2)  ;undo error(s)
+(check-expect (solve-step G5-LAST2) G5-LAST1)  ;penultimate placement
+(check-expect (solve-step G5-LAST1) G5-DONE-S)  ;final placement
+(check-expect (solve-step G5-DONE-S)  ;  finished, disable auto-solve
+              (make-game (game-initial G5-DONE-S)
+                         (game-current G5-DONE-S)
+                         (game-solution G5-DONE-S)
+                         (game-prev G5-DONE-S)
+                         (game-next G5-DONE-S)
+                         (game-errors G5-DONE-S)
+                         WRITE
+                         (game-options G5-DONE-S)
+                         (game-buttons G5-DONE-S)
+                         (game-mouse G5-DONE-S)))
+
+;(define (solve-step g) g)  ;stub
 
 (@template Game)
-#;
-(define (solve-step)
+(define (solve-step g)
   (cond [;; Errors present - remove one error
          (not (empty? (game-errors g)))
          (make-game (game-initial g)
-                    (game-current g)
+                    (erase-square (game-current g)
+                                  (first (game-errors g)))
                     (game-solution g)
-                    (game-prev g)
+                    empty  ;(game-prev g)
                     (game-next g)
-                    (game-errors g)
+                    (rest (game-errors g))
                     (game-mode g)
-                    (game-options g))]
+                    (game-options g)
+                    (game-buttons g)
+                    (game-mouse g))]
         ;; No errors - take next step to solve
         [(not (empty? (game-next g)))
          (make-game (game-initial g)
@@ -1058,8 +1490,10 @@
                     (rest (game-next g))
                     (game-errors g)
                     (game-mode g)
-                    (game-options g))]
-        ;; Finished - switch from SOLVE mode to CHOOSE
+                    (game-options g)
+                    (game-buttons g)
+                    (game-mouse g))]
+        ;; Finished - switch from SOLVE mode to WRITE
         [else
          (make-game (game-initial g)
                     (game-current g)
@@ -1067,14 +1501,66 @@
                     (game-prev g)
                     (game-next g)
                     (game-errors g)
-                    CHOOSE
-                    (game-options g))]))
+                    WRITE
+                    (game-options g)
+                    (game-buttons g)
+                    (game-mouse g))]))
+
+
+(@htdf erase-square)
+(@signature SmartBoard Pos -> Smartboard)
+;; produce a SmartBoard with value at given Pos replaced with constraint set
+(check-expect (erase-square (make-list 81 A) 2) (make-list 81 A))
+(check-expect (erase-square (cons 5 (make-list 80 A))
+                            0)
+              (make-list 81 A))
+(check-expect (erase-square (append (make-list 80 A) (list 9))
+                            80)
+              (make-list 81 A))
+(check-expect (erase-square (append (list 5 2 (list 9))
+                                    (rest (rest (rest SB5s)))) 
+                            1)
+              (append (list 5 (list 3) (list 9))
+                      (rest (rest (rest SB5s)))))
+
+;(define (erase-square sb p) sb)  ;stub
+
+(@template SmartBoard fn-composition)
+(define (erase-square sb p)
+  (local [(define val (list-ref sb p))]
+    (restore-options val p
+                     (constrain-square (append (take sb p)
+                                               (list A)
+                                               (drop sb (add1 p)))
+                                       p))))
+
 
 
 (@htdf render-board)
 (@signature Game -> Image)
 ;; produce a rendering of the current state of the sudoku grid
-;!!!
+(check-expect (render-board MTG)
+              (overlay MTBOARD
+                       (square (* 9 SQUARE-W) "solid" SQUARE-COLOR)))
+(check-expect
+ (render-board (make-game (make-list 81 empty)
+                          (append (list 1 4 (list 3 5)
+                                        2 6 (list 3 5)
+                                        9 7 8)
+                                  (make-list 72 empty))
+                          (make-list 81 empty)
+                          empty empty empty
+                          WRITE OP00 DEFAULT-BUTTONS DEFAULT-MOUSE))
+ (overlay MTBOARD
+          (overlay/align "middle" "top"
+                         (foldl (λ (sq img)
+                                  (beside img (render-square sq)))
+                                empty-image
+                                (list 1 4 (list 3 5)
+                                      2 6 (list 3 5)
+                                      9 7 8))
+                         (square (* 9 SQUARE-W) "solid" SQUARE-COLOR))))
+
 ;(define (render-board g) empty-image)  ;stub
 
 (@template use-abstract-fn fn-composition)
@@ -1113,23 +1599,553 @@
                    empty-image
                    loi))]
     
-    (join-rows (map make-row
-                    (split-rows (game-current g))))))
+    (overlay MTBOARD
+             (join-rows (map make-row
+                             (split-rows (game-current g)))))))
 
 
 (@htdf render-square)
 (@signature Square -> Image)
 ;; produce image representing a single square in sudoku grid
-(check-expect (render-square 5) (overlay ))
-(define (render-square sq) empty-image)  ;stub
+(check-expect (render-square 5)
+              (overlay (text (number->string 5)
+                             SQUARE-TEXT-SIZE BASE-NUM-COLOR)
+                       (square SQUARE-W "solid" SQUARE-COLOR)))
+(check-expect (render-square 9)
+              (overlay (text (number->string 9)
+                             SQUARE-TEXT-SIZE BASE-NUM-COLOR)
+                       (square SQUARE-W "solid" SQUARE-COLOR)))
+(check-expect (render-square empty)
+              (square SQUARE-W "solid" SQUARE-COLOR))
+(check-expect (render-square (list 5))
+              (overlay (render-tiny (list 5))
+                       (square SQUARE-W "solid" SQUARE-COLOR)))
+(check-expect (render-square (list 2 4 8))
+              (overlay (render-tiny (list 2 4 8))
+                       (square SQUARE-W "solid" SQUARE-COLOR)))
+(check-expect (render-square ALL-VALS)
+              (overlay (render-tiny ALL-VALS)
+                       (square SQUARE-W "solid" SQUARE-COLOR)))
+
+;(define (render-square sq) empty-image)  ;stub
 
 (@template Square)
+
+(define (render-square sq)
+  (cond [(number? sq)
+         (overlay (text (number->string sq)
+                        SQUARE-TEXT-SIZE BASE-NUM-COLOR)
+                  (square SQUARE-W "solid" SQUARE-COLOR))]
+        [(empty? sq)
+         (square SQUARE-W "solid" SQUARE-COLOR)]
+        [else
+         (overlay (render-tiny sq)
+                  (square SQUARE-W "solid" SQUARE-COLOR))]))
+
+
+
+(@htdf render-tiny)
+(@signature (listof Natural) -> Image)
+;; produce all tiny numbers present in list positioned in a Square
+;; ASSUME: list is not empty; no duplicates; only Naturals [1-9]
+(check-expect (render-tiny (list 5))
+              (overlay (text "5" TINY-TEXT-SIZE TINY-NUM-COLOR)
+                       TINY-CELL
+                       (square SQUARE-W "solid" "transparent")))
+(check-expect (render-tiny ALL-VALS)
+              (above (beside (overlay (text "1"
+                                            TINY-TEXT-SIZE
+                                            TINY-NUM-COLOR)
+                                      TINY-CELL)
+                             (overlay (text "2"
+                                            TINY-TEXT-SIZE
+                                            TINY-NUM-COLOR)
+                                      TINY-CELL)
+                             (overlay (text "3"
+                                            TINY-TEXT-SIZE
+                                            TINY-NUM-COLOR)
+                                      TINY-CELL))
+                     (beside (overlay (text "4"
+                                            TINY-TEXT-SIZE
+                                            TINY-NUM-COLOR)
+                                      TINY-CELL)
+                             (overlay (text "5"
+                                            TINY-TEXT-SIZE
+                                            TINY-NUM-COLOR)
+                                      TINY-CELL)
+                             (overlay (text "6"
+                                            TINY-TEXT-SIZE
+                                            TINY-NUM-COLOR)
+                                      TINY-CELL))
+                     (beside (overlay (text "7"
+                                            TINY-TEXT-SIZE
+                                            TINY-NUM-COLOR)
+                                      TINY-CELL)
+                             (overlay (text "8"
+                                            TINY-TEXT-SIZE
+                                            TINY-NUM-COLOR)
+                                      TINY-CELL)
+                             (overlay (text "9"
+                                            TINY-TEXT-SIZE
+                                            TINY-NUM-COLOR)
+                                      TINY-CELL))))
+
+(@template (listof Natural) use-abstract-fn)
+
+(define (render-tiny lon)
+  (local [;; ??? make top-level constant?
+          (define numbers (list (list 1 2 3)
+                                (list 4 5 6)
+                                (list 7 8 9)))]
+    (foldl (λ (trio img)
+             (above img
+                    (foldl (λ (t row)
+                             (beside row
+                                     (if (member? t lon)
+                                         (overlay
+                                          (text (number->string t)
+                                                TINY-TEXT-SIZE
+                                                TINY-NUM-COLOR)
+                                          TINY-CELL)
+                                         TINY-CELL)))
+                           empty-image
+                           trio)))
+           empty-image
+           numbers)))
+
+
 
 
 (@htdf render-buttons)
 (@signature Game -> Image)
 ;; produce image of buttons in the GUI in their current state
+;!!! todo
+#;#;
+(check-expect
+ (render-buttons MTG)
+ (above (render-button B-UNDO ((button-pressed? B-UNDO) UNDO))
+        (rectangle 0 BUTTON-MD)
+        (render-button B-HINT ((button-pressed? B-UNDO) HINT))
+        (rectangle 0 BUTTON-MD)
+        (render-button B-SHOW-CH ((button-pressed? B-HOW-CH) MTG))
+        (rectangle 0 BUTTON-MD)
+        (render-button B-WRITE ((button-pressed? B-WRITE) MTG))))
+(check-expect
+ (render-buttons EASY)
+ (above (render-button B-UNDO ((button-pressed? B-UNDO) UNDO))
+        (rectangle 0 BUTTON-MD)
+        (render-button B-HINT ((button-pressed? B-UNDO) HINT))
+        (rectangle 0 BUTTON-MD)
+        (render-button B-SHOW-CH ((button-pressed? B-HOW-CH) MTG))
+        (rectangle 0 BUTTON-MD)
+        (render-button B-WRITE ((button-pressed? B-WRITE) MTG))))
+(define (render-buttons g) empty-image)  ;stub
+
+(@template use-abstract-fn)
+
+
+
+(@htdf render-button)
+(@signature Button ButtonState -> Image)
+;; produce image of a single button in GUI in its current state
+(check-expect (render-button B-SHOW-CH NONE)
+              (overlay (text (button-label B-SHOW-CH)
+                             BUTTON-TEXT-SIZE BUTTON-TEXT-COLOR)
+                       (rectangle BUTTONS-W BUTTON-H "solid"
+                                  (button-color B-SHOW-CH))))
+(check-expect (render-button B-UNDO CLICK)
+              (overlay (text (button-label B-UNDO)
+                             BUTTON-TEXT-SIZE BUTTON-TEXT-COLOR)
+                       (rectangle BUTTONS-W BUTTON-H "solid"
+                                  (button-click B-UNDO))))
+(check-expect (render-button B-UNDO HOVER)
+              (overlay (text (button-label B-UNDO)
+                             BUTTON-TEXT-SIZE BUTTON-TEXT-COLOR)
+                       (rectangle BUTTONS-W BUTTON-H "solid"
+                                  (button-hover B-UNDO))))
+
+;(define (render-button b bs) empty-image)  ;stub
+
+(@template Button ButtonState)
+(define (render-button btn bs)
+  (local [(define render-color
+            (cond [(string=? "none" bs) (button-color btn)]
+                  [(string=? "click" bs) (button-click btn)]
+                  [(string=? "hover" bs) (button-hover btn)]
+                  [else (error "Not a valid ButtonState")]))]
+    (overlay (text (button-label btn)
+                   BUTTON-TEXT-SIZE BUTTON-TEXT-COLOR)
+             (rectangle BUTTONS-W BUTTON-H "solid"
+                        render-color))))
+
+
+;; ==== Mouse Handling Helpers ====
+
+(@htdf mouse-xy)
+(@signature Integer Integer Game -> Game)
+;; produce updated Game state with new game-mouse values from x,y
+(check-expect (mouse-xy 30 40 EASY)
+              (make-game (game-initial EASY)
+                         (game-current EASY)
+                         (game-solution EASY)
+                         (game-prev EASY)
+                         (game-next EASY)
+                         (game-errors EASY)
+                         (game-mode EASY)
+                         (game-options EASY)
+                         (game-buttons EASY)
+                         (make-ms 30 40)))
+(check-expect (mouse-xy 100 80 HARD)
+              (make-game (game-initial HARD)
+                         (game-current HARD)
+                         (game-solution HARD)
+                         (game-prev HARD)
+                         (game-next HARD)
+                         (game-errors HARD)
+                         (game-mode HARD)
+                         (game-options HARD)
+                         (game-buttons HARD)
+                         (make-ms 100 80)))
+
+;(define (mouse-xy x y g) g)  ;stub
+
+(@template Game)
+(define (mouse-xy x y g)
+  (make-game (game-initial g)
+             (game-current g)
+             (game-solution g)
+             (game-prev g)
+             (game-next g)
+             (game-errors g)
+             (game-mode g)
+             (game-options g)
+             (game-buttons g)
+             (make-ms x y)))
+
+
+(@htdf in-board?)
+(@signature Integer Integer -> Boolean)
+;; produce true if x and y (overall coordinates) are in bounds of the board
+(check-expect (in-board? (+ BOARD-LEF -1) (+ BOARD-TOP (/ BOARD-W 2))) false)
+(check-expect (in-board? (+ BOARD-LEF  0) (+ BOARD-TOP (/ BOARD-W 2))) true)
+(check-expect (in-board? (+ BOARD-LEF  1) (+ BOARD-TOP (/ BOARD-W 2))) true)
+(check-expect (in-board? (+ BOARD-RIG -1) (+ BOARD-TOP (/ BOARD-W 2))) true)
+(check-expect (in-board? (+ BOARD-RIG  0) (+ BOARD-TOP (/ BOARD-W 2))) false)
+(check-expect (in-board? (+ BOARD-RIG  1) (+ BOARD-TOP (/ BOARD-W 2))) false)
+(check-expect (in-board? (+ BOARD-LEF (/ BOARD-W 2)) (+ BOARD-TOP -1)) false)
+(check-expect (in-board? (+ BOARD-LEF (/ BOARD-W 2)) (+ BOARD-TOP  0)) true)
+(check-expect (in-board? (+ BOARD-LEF (/ BOARD-W 2)) (+ BOARD-TOP  1)) true)
+(check-expect (in-board? (+ BOARD-LEF (/ BOARD-W 2)) (+ BOARD-BOT -1)) true)
+(check-expect (in-board? (+ BOARD-LEF (/ BOARD-W 2)) (+ BOARD-BOT  0)) false)
+(check-expect (in-board? (+ BOARD-LEF (/ BOARD-W 2)) (+ BOARD-BOT  1)) false)
+
+;(define (in-board? x y) false)  ;stub
+
+(@template Integer)
+(define (in-board? x y)
+  (and (<= BOARD-LEF x)
+       (< x BOARD-RIG)
+       (<= BOARD-TOP y)
+       (< y BOARD-BOT)))
+
+
+(@htdf in-buttons?)
+(@signature Integer Integer -> Boolean)
+;; produce true if x and y (overall coordinates) are in bounds of the buttons
+(check-expect (in-buttons? (+ BUTTONS-LEF -1) CTR-Y) false)
+(check-expect (in-buttons? (+ BUTTONS-LEF  0) CTR-Y) true)
+(check-expect (in-buttons? (+ BUTTONS-LEF  1) CTR-Y) true)
+(check-expect (in-buttons? (+ BUTTONS-RIG -1) CTR-Y) true)
+(check-expect (in-buttons? (+ BUTTONS-RIG  0) CTR-Y) false)
+(check-expect (in-buttons? (+ BUTTONS-RIG  1) CTR-Y) false)
+(check-expect
+ (in-buttons? (+ BUTTONS-LEF (/ BUTTONS-W 2)) (+ BUTTONS-TOP -1)) false)
+(check-expect
+ (in-buttons? (+ BUTTONS-LEF (/ BUTTONS-W 2)) (+ BUTTONS-TOP  0)) true)
+(check-expect
+ (in-buttons? (+ BUTTONS-LEF (/ BUTTONS-W 2)) (+ BUTTONS-TOP  1)) true)
+(check-expect
+ (in-buttons? (+ BUTTONS-LEF (/ BUTTONS-W 2)) (+ BUTTONS-BOT -1)) true)
+(check-expect
+ (in-buttons? (+ BUTTONS-LEF (/ BUTTONS-W 2)) (+ BUTTONS-BOT  0)) false)
+(check-expect
+ (in-buttons? (+ BUTTONS-LEF (/ BUTTONS-W 2)) (+ BUTTONS-BOT  1)) false)
+
+;(define (in-buttons? x y) false)  ;stub
+
+(@template Integer)
+(define (in-buttons? x y)
+  (and (<= BUTTONS-LEF x)
+       (< x BUTTONS-RIG)
+       (<= BUTTONS-TOP y)
+       (< y BUTTONS-BOT)))
+
+
+(@htdf board-hover)
+(@signature Game Integer Integer -> Game)
+;; produce game state for mouse hovering at x,y (in *board* coordinates)
 ;!!!
-(define (render-buttons g) empty-image)
+(define (board-hover g x y) g)  ;stub
+
+
+(@htdf board-click)
+(@signature Game Integer Integer -> Game)
+;; produce game state for mouse click at x,y (in *board* coordinates)
+;!!!
+(define (board-click g x y) g)  ;stub
+
+
+(@htdf buttons-click)
+(@signature Game Integer Integer -> Game)
+;; produce game state for mouse click at x,y (in *button* coordinates)
+(check-expect (buttons-click EASY 0 0)
+              (click-undo EASY))
+(check-expect (buttons-click G5-LAST2 0 (+ BUTTON-H BUTTON-MD))
+              (click-hint G5-LAST2))
+(check-expect (buttons-click HARD 0 (* 2 (+ BUTTON-H BUTTON-MD)))
+              (click-solve HARD))
+(check-expect (buttons-click EASY 0 (sub1 (* 2 (+ BUTTON-H BUTTON-MD)))) EASY)
+
+;(define (buttons-click g x y) g)  ;stub
+
+(@template Game)
+(define (buttons-click g x y)
+  (local [(define button-index (xy->buttonindex x y))
+          (define (get-func i)
+            (button-on/click (list-ref LIST-BUTTONS i)))]
+    
+    (if (not (false? button-index))
+        ((get-func button-index) g)
+        g)))
+
+
+(@htdf click-undo)
+(@signature Game -> Game)
+;; produce game state after undoing a move, if prev move(s) are known.
+;!!!
+(define (click-undo g) g)  ;stub
+
+
+(@htdf click-hint)
+(@signature Game -> Game)
+;; produce game state after using a hint, if board is solveable.
+;!!!
+(define (click-hint g) g)  ;stub
+
+
+(@htdf click-solve)
+(@signature Game -> Game)
+;; switch game into SOLVE Mode (autosolve), if initial board was solveable.
+;!!! need to edit button state?
+(check-expect (click-solve EASY) EASY-S)
+(check-expect (click-solve HARD-E) HARD-S)
+
+;(define (click-solve g) g)  ;stub
+
+(@template Game)
+(define (click-solve g)
+  (make-game (game-initial g) (game-current g) (game-solution g)
+             (game-prev g) (game-next g) (game-errors g)
+             SOLVE (game-options g) (game-buttons g) (game-mouse g)))
+
+
+(@htdf click-choices)
+(@signature Game -> Game)
+;; produce game state after toggling show choices in Options.
+(check-expect
+ (click-choices EASY)
+ (make-game (game-initial EASY) (game-current EASY) (game-solution EASY)
+            (game-prev EASY) (game-next EASY) (game-errors EASY)
+            (game-mode EASY)
+            (make-ops
+             (not (ops-showchoices (game-options EASY)))
+             (ops-showerrors (game-options EASY)))
+            (game-buttons EASY) (game-mouse EASY)))
+(check-expect
+ (click-choices (make-game (game-initial EASY) (game-current EASY)
+                           (game-solution EASY) (game-prev EASY)
+                           (game-next EASY) (game-errors EASY) (game-mode EASY)
+                           (make-ops
+                            (not (ops-showchoices (game-options EASY)))
+                            (ops-showerrors (game-options EASY)))
+                           (game-buttons EASY) (game-mouse EASY))) EASY)
+
+;(define (click-choices g) g)  ;stub
+
+(@template Game)
+(define (click-choices g)
+  (make-game (game-initial g) (game-current g) (game-solution g)
+             (game-prev g) (game-next g) (game-errors g) (game-mode g)
+             (make-ops
+              (not (ops-showchoices (game-options g)))
+              (ops-showerrors (game-options g)))
+             (game-buttons g) (game-mouse g)))
+
+
+(@htdf click-errors)
+(@signature Game -> Game)
+;; produce game state after toggling show errors in Options.
+(check-expect
+ (click-errors HARD)
+ (make-game (game-initial HARD) (game-current HARD) (game-solution HARD)
+            (game-prev HARD) (game-next HARD) (game-errors HARD)
+            (game-mode HARD)
+            (make-ops
+             (ops-showchoices (game-options HARD))
+             (not (ops-showerrors (game-options HARD))))
+            (game-buttons HARD) (game-mouse HARD)))
+(check-expect
+ (click-errors (make-game (game-initial HARD) (game-current HARD)
+                          (game-solution HARD) (game-prev HARD)
+                          (game-next HARD) (game-errors HARD) (game-mode HARD)
+                          (make-ops
+                           (ops-showchoices (game-options HARD))
+                           (not (ops-showerrors (game-options HARD))))
+                          (game-buttons HARD) (game-mouse HARD))) HARD)
+
+;(define (click-errors g) g)  ;stub
+
+(@template Game)
+(define (click-errors g)
+  (make-game (game-initial g) (game-current g) (game-solution g)
+             (game-prev g) (game-next g) (game-errors g) (game-mode g)
+             (make-ops
+              (ops-showchoices (game-options g))
+              (not (ops-showerrors (game-options g))))
+             (game-buttons g) (game-mouse g)))
+
+
+(@htdf click-write)
+(@signature Game -> Game)
+;; produce game after switching into WRITE Mode.
+;!!! change the button states?
+(check-expect (click-write EASY) EASY)
+(check-expect (click-write HARD-E) HARD)
+
+;(define (click-write g) g)  ;stub
+
+(@template Game)
+(define (click-write g)
+  (make-game (game-initial g) (game-current g) (game-solution g)
+             (game-prev g) (game-next g) (game-errors g)
+             WRITE (game-options g) (game-buttons g) (game-mouse g)))
+
+
+(@htdf click-erase)
+(@signature Game -> Game)
+;; produce game after switching into ERASE Mode.
+;!!! change the button states
+(check-expect (click-erase EASY) EASY-E)
+(check-expect (click-erase HARD-E) HARD-E)
+
+;(define (click-erase g) g)  ;stub
+
+(@template Game)
+(define (click-erase g)
+  (make-game (game-initial g) (game-current g) (game-solution g)
+             (game-prev g) (game-next g) (game-errors g)
+             ERASE (game-options g) (game-buttons g) (game-mouse g)))
+
+
+(@htdf xy->pos)
+(@signature Integer Integer -> Pos)
+;; produce the Pos of the square at the location of x,y (board coordinates)
+;; ASSUME 0 <= x,y < BOARD-W
+(check-expect (xy->pos 0 0) 0)
+(check-expect (xy->pos (sub1 BOARD-W) (sub1 BOARD-W)) 80)
+(check-expect (xy->pos (+ (* 8 SQUARE-W) -1) 0) 7)
+(check-expect (xy->pos (+ (* 8 SQUARE-W)  0) 0) 8)
+(check-expect (xy->pos (+ (* 8 SQUARE-W)  1) 0) 8)
+(check-expect (xy->pos 0 (+ (* 8 SQUARE-W) -1)) 63)
+(check-expect (xy->pos 0 (+ (* 8 SQUARE-W)  0)) 72)
+(check-expect (xy->pos 0 (+ (* 8 SQUARE-W)  1)) 72)
+(check-expect (xy->pos (+ (* 4 SQUARE-W)  0) (+ (* 4 SQUARE-W)  0)) 40)
+(check-expect (xy->pos (+ (* 5 SQUARE-W) -1) (+ (* 5 SQUARE-W) -1)) 40)
+
+;(define (xy->pos x y) 0)  ;stub
+
+(@template Integer)
+(define (xy->pos x y)
+  (+ (* (quotient y SQUARE-W) 9) (quotient x SQUARE-W)))
+
+
+(@htdf xy->tinyval)
+(@signature Integer Integer -> Val)
+;; produce Val of the tiny cell at the location of x,y (square coordinates)
+;; ASSUME 0 <= x,y SQUARE-W
+(check-expect (xy->tinyval 0 0) 1)
+(check-expect (xy->tinyval (sub1 SQUARE-W) (sub1 SQUARE-W)) 9)
+(check-expect (xy->tinyval (+ (* 2 CELL-W) -1) 0) 2)
+(check-expect (xy->tinyval (+ (* 2 CELL-W)  0) 0) 3)
+(check-expect (xy->tinyval (+ (* 2 CELL-W)  1) 0) 3)
+(check-expect (xy->tinyval 0 (+ (* 2 CELL-W) -1)) 4)
+(check-expect (xy->tinyval 0 (+ (* 2 CELL-W)  0)) 7)
+(check-expect (xy->tinyval 0 (+ (* 2 CELL-W)  1)) 7)
+(check-expect (xy->tinyval CELL-W CELL-W) 5)
+(check-expect (xy->tinyval (+ (* 2 CELL-W) -1) (+ (* 2 CELL-W) -1)) 5)
+
+;(define (xy->tinyval x y) 1)  ;stub
+
+(@template Integer)
+(define (xy->tinyval x y)
+  (+ 1 (* (quotient y CELL-W) 3) (quotient x CELL-W)))
+
+
+(@htdf xy->buttonindex)
+(@signature Integer Integer -> Natural or false)
+;; produce index of the button at the location of x,y (buttons coordinates)
+;; ASSUME 0 <= x < BUTTONS-W and 0 <= y < BOARD-W ;!!!?
+(check-expect (xy->buttonindex 0 0) 0)
+(check-expect (xy->buttonindex (sub1 BUTTONS-W) (sub1 BUTTON-H)) 0)
+(check-expect (xy->buttonindex (/ BUTTONS-W 2) (+ BUTTON-H -1)) 0)
+(check-expect (xy->buttonindex (/ BUTTONS-W 2) (+ BUTTON-H  0)) false)
+(check-expect (xy->buttonindex (/ BUTTONS-W 2) (+ BUTTON-H  1)) false)
+(check-expect (xy->buttonindex (/ BUTTONS-W 2) (+ BUTTON-H BUTTON-MD -1)) false)
+(check-expect (xy->buttonindex (/ BUTTONS-W 2) (+ BUTTON-H BUTTON-MD  0)) 1)
+(check-expect (xy->buttonindex (/ BUTTONS-W 2) (+ BUTTON-H BUTTON-MD  1)) 1)
+(check-expect (xy->buttonindex 0 (* 2 (+ BUTTON-H BUTTON-MD))) 2)
+(check-expect (xy->buttonindex 0 (* NUM-BUTTONS (+ BUTTON-H BUTTON-MD))) false)
+
+;(define (xy->buttonindex x y) false)  ;stub
+
+(@template Integer)
+(define (xy->buttonindex x y)
+  (local [(define spacing (+ BUTTON-H BUTTON-MD))
+          (define index-zone (quotient y spacing))]
+    (cond [(not (and (<= 0 x) (< x BUTTONS-W)
+                     (<= 0 y) (< y BOARD-W)))
+           (error "x or y is out of bounds for buttons coordinates")]
+          [(and (< index-zone NUM-BUTTONS)
+                (< (remainder y spacing) BUTTON-H))
+           index-zone]
+          [else false])))
+
+
+(@htdf lookup-button)
+(@signature ButtonID -> Button)
+;; produce the static button data corresponding to a given ID
+(check-expect (lookup-button "b-undo") B-UNDO)
+(check-expect (lookup-button "b-show-er") B-SHOW-ER)
+(check-expect (lookup-button "b-erase") B-ERASE)
+
+;(define (lookup-button id) B-HINT)  ;stub
+
+(@template (listof Button) encapsulated)
+(define (lookup-button id)
+  (local [(define (lookup-button lob)
+            (cond [(empty? lob) (error "No Button exists with this ID")]
+                  [else
+                   (if (string=? (button-id (first lob)) id)
+                       (first lob)
+                       (lookup-button (rest lob)))]))]
+    (lookup-button LIST-BUTTONS)))
+
+
+(@htdf get-buttonstate)
+(@signature Button Boolean Game -> ButtonState)
+;; produce ButtonState of a button given game state and boolean for mouse hover
+;!!!
+(define (get-buttonstate b hover? g) "none")  ;stub
+
 
 

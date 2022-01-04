@@ -6,8 +6,9 @@
 
 ;; PLAYABLE SUDOKU GAME by Ellen Lloyd
 ;;
-;; Based on Constrained Search Tree Sudoku solver
-;; Solution Design by Ellen Lloyd
+;; Based on:
+;; Constrained Search Tree Sudoku Solver solution design
+;; by Ellen Lloyd
 ;;
 ;; In Sudoku, the board is a 9x9 grid of SQUARES.
 ;; There are 9 ROWS and 9 COLUMNS, there are also 9
@@ -903,6 +904,7 @@
 (define BASE-NUM-COLOR "black")
 (define USER-NUM-COLOR "navy")
 (define TINY-NUM-COLOR "sky blue")
+(define TINY-ALL-COLOR "dark grey")
 (define NOPE-NUM-COLOR "crimson")
 (define HINT-NUM-COLOR "forest green")
 
@@ -910,7 +912,9 @@
 (define BIG-GRID-COLOR "dark gray")
 
 (define SQUARE-COLOR "white")
-(define NOPE-COLOR "light coral")
+(define SQ-COLOR-HINT "chartreuse")
+(define SQ-COLOR-UNDO "light blue")
+(define SQ-COLOR-ERROR "light coral")
 
 (define MTS-COLOR "cornflower blue")
 
@@ -987,8 +991,8 @@
 
 
 (@htdd Button)
-(define-struct button [id label on/click pressed? color click hover])
-;; Button is (make-button ButtonID String (Game -> Game)
+(define-struct btn [id label on/click pressed? color click hover])
+;; Button is (make-btn ButtonID String (Game -> Game)
 ;;                        (Game -> Boolean) Color Color Color)
 ;; INTERP. a UI button with properties:
 ;;    id       - unique ButtonID String identifier
@@ -999,45 +1003,60 @@
 ;;    click    - button Color when pressed
 ;;    hover    - button Color when hover
 
-(define B-UNDO (make-button "b-undo" "Undo"
-                            (λ (g) (click-undo g)) (λ (_) false)
+(define B-UNDO (make-btn "b-undo" "Undo"
+                         (λ (g) (click-undo g)) (λ (_) false)
+                         "Tomato" "OrangeRed" "LightCoral"))
+(define B-HINT (make-btn "b-hint" "Hint?"
+                         (λ (g) (click-hint g)) (λ (_) false)
+                         "Orange" "DarkOrange" "NavajoWhite"))
+(define B-SOLVE (make-btn "b-solve" "Auto-Solve"
+                          (λ (g) (click-solve g))
+                          (λ (g) (string=? (game-mode g) SOLVE))
+                          "LimeGreen" "ForestGreen" "Chartreuse"))
+(define B-SHOW-CH (make-btn "b-show-ch" "Show Choices"
+                            (λ (g) (click-choices g))
+                            (λ (g) (ops-showchoices (game-options g)))
+                            "DeepSkyBlue" "DodgerBlue" "SkyBlue"))
+(define B-SHOW-ER (make-btn "b-show-er" "Show Errors"
+                            (λ (g) (click-errors g))
+                            (λ (g) (ops-showerrors (game-options g)))
                             "Tomato" "OrangeRed" "LightCoral"))
-(define B-HINT (make-button "b-hint" "Hint?"
-                            (λ (g) (click-hint g)) (λ (_) false)
-                            "Orange" "DarkOrange" "NavajoWhite"))
-(define B-SOLVE (make-button "b-solve" "Auto-Solve"
-                             (λ (g) (click-solve g))
-                             (λ (g) (string=? (game-mode g) SOLVE))
-                             "LimeGreen" "ForestGreen" "Chartreuse"))
-(define B-SHOW-CH (make-button "b-show-ch" "Show Choices"
-                               (λ (g) (click-choices g))
-                               (λ (g) (ops-showchoices (game-options g)))
-                               "DeepSkyBlue" "DodgerBlue" "SkyBlue"))
-(define B-SHOW-ER (make-button "b-show-er" "Show Errors"
-                               (λ (g) (click-errors g))
-                               (λ (g) (ops-showerrors (game-options g)))
-                               "Tomato" "OrangeRed" "LightCoral"))
-(define B-WRITE (make-button "b-write" "Write"
-                             (λ (g) (click-write g))
-                             (λ (g) (string=? (game-mode g) WRITE))
-                             "CornflowerBlue" "RoyalBlue" "LightSkyBlue"))
-(define B-ERASE (make-button "b-erase" "Erase"
-                             (λ (g) (click-erase g))
-                             (λ (g) (string=? (game-mode g) ERASE))
-                             "Violet" "HotPink" "LightPink"))
+(define B-WRITE (make-btn "b-write" "Write"
+                          (λ (g) (click-write g))
+                          (λ (g) (string=? (game-mode g) WRITE))
+                          "CornflowerBlue" "RoyalBlue" "LightSkyBlue"))
+(define B-ERASE (make-btn "b-erase" "Erase"
+                          (λ (g) (click-erase g))
+                          (λ (g) (string=? (game-mode g) ERASE))
+                          "Violet" "HotPink" "LightPink"))
 
 (define LIST-BUTTONS (list B-UNDO B-HINT B-SOLVE
                            B-SHOW-CH B-SHOW-ER B-WRITE B-ERASE))
 (define NUM-BUTTONS (length LIST-BUTTONS))
 
 
+(@htdd SqHighlight)
+;; SqHighlight is one of: "none", "hint", "undo", "error"
+;; INTERP. The highlight mode for rendering a board square. "none" is normal
+(define (fn-for-sqhighlight sh)
+  (cond [(string=? "none" sh) (...)]
+        [(string=? "hint" sh) (...)]
+        [(string=? "undo" sh) (...)]
+        [(string=? "error" sh) (...)]))
+
+
+(@htdd DisplayCell)
+;; DisplayCell is one of: "none", "choices", "all"
+;; INTERP. The display mode for rendering tiny cell nums. "none" is empty
+(define (fn-for-displaycell dc)
+  (cond [(string=? "none" dc) (...)]
+        [(string=? "choices" dc) (...)]
+        [(string=? "all" dc) (...)]))
+
+
 (@htdd ButtonState)
 ;; ButtonState is one of: "none", "click", "hover"
 ;; INTERP. The interaction state of a UI button. "none" is normal state
-(define NONE "none")
-(define CLICK "click")
-(define HOVER "hover")
-
 (define (fn-for-buttonstate bs)
   (cond [(string=? "none" bs) (...)]
         [(string=? "click" bs) (...)]
@@ -1241,6 +1260,19 @@
                           OP00
                           BTNS-S
                           (make-ms -1 -1)))
+(define G5-ERR-W (make-game (prep-smartboard SB5-raw)
+                            (append (list 5 2 (list 9))
+                                    (rest (rest (rest SB5s))))
+                            SB5s
+                            (list (append (list 5 (list 3) (list 9))
+                                          (rest (rest (rest SB5s)))))
+                            (solve-steps (append (list 5 (list 3) (list 9))
+                                                 (rest (rest (rest SB5s)))))
+                            (list 1)  ;has error
+                            WRITE
+                            OP00
+                            BTNS-S
+                            (make-ms -1 -1)))
 (define G5-ERR (make-game (prep-smartboard SB5-raw)
                           (append (list 5 2 (list 9))
                                   (rest (rest (rest SB5s))))
@@ -1289,6 +1321,19 @@
                              empty
                              empty
                              SOLVE
+                             OP00
+                             BTNS-S
+                             (make-ms -1 -1)))
+(define G5-DONE-W (make-game (prep-smartboard SB5-raw)
+                             SB5s
+                             SB5s
+                             (list (append (list 5 3 (list 9))
+                                           (rest (rest (rest SB5s))))
+                                   (append (list 5 (list 3) (list 9))
+                                           (rest (rest (rest SB5s)))))
+                             empty
+                             empty
+                             WRITE
                              OP00
                              BTNS-S
                              (make-ms -1 -1)))
@@ -1349,20 +1394,22 @@
                         MTS
                         BORDER-LR
                         BORDER-TB
-                        (beside (overlay MTBOARD
-                                         (render-board EASY))
-                                (rectangle SQUARE-W 0 "solid" "white")
-                                (render-buttons EASY))))
+                        (beside/align "top"
+                                      (overlay MTBOARD
+                                               (render-board EASY))
+                                      (rectangle SQUARE-W 0 "solid" "white")
+                                      (render-buttons EASY))))
 (check-expect
  (render HARD)
  (underlay/align/offset "left" "top"
                         MTS
                         BORDER-LR
                         BORDER-TB
-                        (beside (overlay MTBOARD
-                                         (render-board HARD))
-                                (rectangle SQUARE-W 0 "solid" "white")
-                                (render-buttons HARD))))
+                        (beside/align "top"
+                                      (overlay MTBOARD
+                                               (render-board HARD))
+                                      (rectangle SQUARE-W 0 "solid" "white")
+                                      (render-buttons HARD))))
 ;(define (render g) empty-image)  ;stub
 
 (@template fn-composition)
@@ -1371,10 +1418,11 @@
                          MTS
                          BORDER-LR
                          BORDER-TB
-                         (beside (overlay MTBOARD
-                                          (render-board g))
-                                 (rectangle SQUARE-W 0 "solid" "white")
-                                 (render-buttons g))))
+                         (beside/align "top"
+                                       (overlay MTBOARD
+                                                (render-board g))
+                                       (rectangle SQUARE-W 0 "solid" "white")
+                                       (render-buttons g))))
 
 
 (@htdf handle-mouse)
@@ -1550,11 +1598,12 @@
                                   (make-list 72 empty))
                           (make-list 81 empty)
                           empty empty empty
-                          WRITE OP00 DEFAULT-BUTTONS DEFAULT-MOUSE))
+                          WRITE OP10 DEFAULT-BUTTONS DEFAULT-MOUSE))
  (overlay MTBOARD
           (overlay/align "middle" "top"
                          (foldl (λ (sq img)
-                                  (beside img (render-square sq)))
+                                  (beside img (render-square sq "none"
+                                                             "options")))
                                 empty-image
                                 (list 1 4 (list 3 5)
                                       2 6 (list 3 5)
@@ -1563,10 +1612,11 @@
 
 ;(define (render-board g) empty-image)  ;stub
 
-(@template use-abstract-fn fn-composition)
+(@template fn-composition encapsulated accumulator)
 (define (render-board g)
   (local [(define board (game-current g))
-
+          
+          ;; produce a list of lists of 9 Squares each, coresponding to ROWS
           (define (split-rows losq0)
             ;; n is Natural  ; context accumululator for how many more
             ;;                 list items to grab from losq0 before splitting
@@ -1585,133 +1635,179 @@
               
               (split-rows losq0 9 empty)))
 
+          ;; produce board image composed of 9 row images
+          (define (make-rows lolosq0)
+            ;; fb is Pos  ; Position of first square in (first lolosq)
+            ;; rsf is Image  ;result-so-far accumulator
+            (local [(define (make-rows lolosq fp rsf)
+                      (cond [(empty? lolosq) rsf]
+                            [else
+                             (make-rows (rest lolosq)
+                                        (+ fp 9)
+                                        (above rsf
+                                               (make-row (first lolosq)
+                                                         fp)))]))]
+              
+              (make-rows lolosq0 0 empty-image)))
+
           ;; ASSUME: losq has 9 items
-          (define (make-row losq)
-            (foldl (λ (sq row)
-                     (beside row (render-square sq)))
-                   empty-image
-                   losq))
+          ;; ASSUME: lop contains 9 Pos corresponding to losq
+          (define (make-row losq p)
+            (cond [(empty? losq) empty-image]
+                  [else
+                   (beside (render-square (first losq)
+                                          (get-highlight (first losq) p)
+                                          (get-displaycell (first losq) p))
+                           (make-row (rest losq) (add1 p)))]))
           
           ;; produce board render from list of 9 row images
           (define (join-rows loi)
             (foldl (λ (row bd)
                      (above bd row))
                    empty-image
-                   loi))]
+                   loi))
+
+          ;; produce SqHighlight value for a given square
+          (define (get-highlight sq p)  ;!!!
+            (cond [(and (false? g)  ;!!! change to hover over undo
+                        (not false? (get-lastmovepos g))
+                        (equal? p (get-lastmovepos g))) "undo"]
+                  [(and (false? g)  ;!!! change to hover over hint
+                        (empty? (game-errors g))
+                        (equal? p (get-nextmovepos g))) "hint"]
+                  [(or (and (ops-showerrors (game-options g))
+                            (member? p (game-errors g)))
+                       (and (false? g)  ;!!! change to hover over hint
+                            (not (empty? (game-errors g)))
+                            (= p (first (game-errors g))))) "error"]
+                  [else "none"]))
+
+          ;; produce DisplayCell value for a given square
+          (define (get-displaycell sq p)
+            (cond [(or (ops-showchoices (game-options g))
+                       (string=? SOLVE (game-mode g))) "choices"]
+                  [(false? g) "all"]  ;!!! change to hover over square
+                  [else "none"]))]
     
     (overlay MTBOARD
-             (join-rows (map make-row
-                             (split-rows (game-current g)))))))
+             (make-rows (split-rows (game-current g))))))
+
+(@htdf get-lastmovepos)
+(@signature Game -> Pos or false)
+;; produce the Pos of most recent added number if prev move data exists
+(define (get-lastmovepos g) false)  ;stub
+
+(@htdf get-nextmovepos)
+(@signature Game -> Pos or false)
+;; produce the Pos of next number to add with hint, if next move data exists
+(define (get-nextmovepos g) false)  ;stub
 
 
 (@htdf render-square)
-(@signature Square -> Image)
+(@signature Square SqHighlight DisplayCell -> Image)
 ;; produce image representing a single square in sudoku grid
-(check-expect (render-square 5)
+(check-expect (render-square 5 "error" "none")
               (overlay (text (number->string 5)
                              SQUARE-TEXT-SIZE BASE-NUM-COLOR)
-                       (square SQUARE-W "solid" SQUARE-COLOR)))
-(check-expect (render-square 9)
+                       (square SQUARE-W "solid" SQ-COLOR-ERROR)))
+(check-expect (render-square 9 "undo" "none")
               (overlay (text (number->string 9)
                              SQUARE-TEXT-SIZE BASE-NUM-COLOR)
-                       (square SQUARE-W "solid" SQUARE-COLOR)))
-(check-expect (render-square empty)
+                       (square SQUARE-W "solid" SQ-COLOR-UNDO)))
+(check-expect (render-square empty "none" "none")
               (square SQUARE-W "solid" SQUARE-COLOR))
-(check-expect (render-square (list 5))
-              (overlay (render-tiny (list 5))
-                       (square SQUARE-W "solid" SQUARE-COLOR)))
-(check-expect (render-square (list 2 4 8))
-              (overlay (render-tiny (list 2 4 8))
-                       (square SQUARE-W "solid" SQUARE-COLOR)))
-(check-expect (render-square ALL-VALS)
-              (overlay (render-tiny ALL-VALS)
+(check-expect (render-square (list 5) "hint" "choices")
+              (overlay (render-tiny (list 5) "choices")
+                       (square SQUARE-W "solid" SQ-COLOR-HINT)))
+(check-expect (render-square (list 2 4 8) "hint" "all")
+              (overlay (render-tiny (list 2 4 8) "all")
+                       (square SQUARE-W "solid" SQ-COLOR-HINT)))
+(check-expect (render-square ALL-VALS "none" "all")
+              (overlay (render-tiny ALL-VALS "all")
                        (square SQUARE-W "solid" SQUARE-COLOR)))
 
-;(define (render-square sq) empty-image)  ;stub
+;(define (render-square sq sh dc) empty-image)  ;stub
 
 (@template Square)
 
-(define (render-square sq)
-  (cond [(number? sq)
-         (overlay (text (number->string sq)
-                        SQUARE-TEXT-SIZE BASE-NUM-COLOR)
-                  (square SQUARE-W "solid" SQUARE-COLOR))]
-        [(empty? sq)
-         (square SQUARE-W "solid" SQUARE-COLOR)]
-        [else
-         (overlay (render-tiny sq)
-                  (square SQUARE-W "solid" SQUARE-COLOR))]))
+(define (render-square sq sh dc)
+  (local [(define square-background
+            (square SQUARE-W "solid"
+                    (cond [(string=? "none" sh) SQUARE-COLOR]
+                          [(string=? "hint" sh) SQ-COLOR-HINT]
+                          [(string=? "undo" sh) SQ-COLOR-UNDO]
+                          [(string=? "error" sh) SQ-COLOR-ERROR])))]
+    (cond [(number? sq)
+           (overlay (text (number->string sq)
+                          SQUARE-TEXT-SIZE BASE-NUM-COLOR)
+                    square-background)]
+          [(empty? sq)
+           square-background]
+          [else
+           (overlay (render-tiny sq dc)
+                    square-background)])))
 
 
 
 (@htdf render-tiny)
-(@signature (listof Natural) -> Image)
+(@signature (listof Natural) DisplayCell -> Image)
 ;; produce all tiny numbers present in list positioned in a Square
 ;; ASSUME: list is not empty; no duplicates; only Naturals [1-9]
-(check-expect (render-tiny (list 5))
+(check-expect (render-tiny (list 3) "none")
+              (square SQUARE-W "solid" "transparent"))
+(check-expect (render-tiny (list 5) "choices")
               (overlay (text "5" TINY-TEXT-SIZE TINY-NUM-COLOR)
                        TINY-CELL
                        (square SQUARE-W "solid" "transparent")))
-(check-expect (render-tiny ALL-VALS)
-              (above (beside (overlay (text "1"
-                                            TINY-TEXT-SIZE
-                                            TINY-NUM-COLOR)
-                                      TINY-CELL)
-                             (overlay (text "2"
-                                            TINY-TEXT-SIZE
-                                            TINY-NUM-COLOR)
-                                      TINY-CELL)
-                             (overlay (text "3"
-                                            TINY-TEXT-SIZE
-                                            TINY-NUM-COLOR)
-                                      TINY-CELL))
-                     (beside (overlay (text "4"
-                                            TINY-TEXT-SIZE
-                                            TINY-NUM-COLOR)
-                                      TINY-CELL)
-                             (overlay (text "5"
-                                            TINY-TEXT-SIZE
-                                            TINY-NUM-COLOR)
-                                      TINY-CELL)
-                             (overlay (text "6"
-                                            TINY-TEXT-SIZE
-                                            TINY-NUM-COLOR)
-                                      TINY-CELL))
-                     (beside (overlay (text "7"
-                                            TINY-TEXT-SIZE
-                                            TINY-NUM-COLOR)
-                                      TINY-CELL)
-                             (overlay (text "8"
-                                            TINY-TEXT-SIZE
-                                            TINY-NUM-COLOR)
-                                      TINY-CELL)
-                             (overlay (text "9"
-                                            TINY-TEXT-SIZE
-                                            TINY-NUM-COLOR)
-                                      TINY-CELL))))
+(check-expect
+ (render-tiny (list 7) "all")
+ (above (beside (overlay (text "1" TINY-TEXT-SIZE TINY-ALL-COLOR) TINY-CELL)
+                (overlay (text "2" TINY-TEXT-SIZE TINY-ALL-COLOR) TINY-CELL)
+                (overlay (text "3" TINY-TEXT-SIZE TINY-ALL-COLOR) TINY-CELL))
+        (beside (overlay (text "4" TINY-TEXT-SIZE TINY-ALL-COLOR) TINY-CELL)
+                (overlay (text "5" TINY-TEXT-SIZE TINY-ALL-COLOR) TINY-CELL)
+                (overlay (text "6" TINY-TEXT-SIZE TINY-ALL-COLOR) TINY-CELL))
+        (beside (overlay (text "7" TINY-TEXT-SIZE TINY-ALL-COLOR) TINY-CELL)
+                (overlay (text "8" TINY-TEXT-SIZE TINY-ALL-COLOR) TINY-CELL)
+                (overlay (text "9" TINY-TEXT-SIZE TINY-ALL-COLOR) TINY-CELL))))
+(check-expect
+ (render-tiny ALL-VALS "choices")
+ (above (beside (overlay (text "1" TINY-TEXT-SIZE TINY-NUM-COLOR) TINY-CELL)
+                (overlay (text "2" TINY-TEXT-SIZE TINY-NUM-COLOR) TINY-CELL)
+                (overlay (text "3" TINY-TEXT-SIZE TINY-NUM-COLOR) TINY-CELL))
+        (beside (overlay (text "4" TINY-TEXT-SIZE TINY-NUM-COLOR) TINY-CELL)
+                (overlay (text "5" TINY-TEXT-SIZE TINY-NUM-COLOR) TINY-CELL)
+                (overlay (text "6" TINY-TEXT-SIZE TINY-NUM-COLOR) TINY-CELL))
+        (beside (overlay (text "7" TINY-TEXT-SIZE TINY-NUM-COLOR) TINY-CELL)
+                (overlay (text "8" TINY-TEXT-SIZE TINY-NUM-COLOR) TINY-CELL)
+                (overlay (text "9" TINY-TEXT-SIZE TINY-NUM-COLOR) TINY-CELL))))
 
 (@template (listof Natural) use-abstract-fn)
 
-(define (render-tiny lon)
+(define (render-tiny lon dc)
   (local [;; ??? make top-level constant?
           (define numbers (list (list 1 2 3)
                                 (list 4 5 6)
-                                (list 7 8 9)))]
-    (foldl (λ (trio img)
-             (above img
-                    (foldl (λ (t row)
-                             (beside row
-                                     (if (member? t lon)
-                                         (overlay
-                                          (text (number->string t)
-                                                TINY-TEXT-SIZE
-                                                TINY-NUM-COLOR)
-                                          TINY-CELL)
-                                         TINY-CELL)))
-                           empty-image
-                           trio)))
-           empty-image
-           numbers)))
+                                (list 7 8 9)))
+          (define tiny-color (if (string=? "all" dc)
+                                 TINY-ALL-COLOR
+                                 TINY-NUM-COLOR))
+          (define (render-t t)
+            (if (or (string=? "all" dc)
+                    (member? t lon))
+                (overlay (text (number->string t) TINY-TEXT-SIZE tiny-color)
+                         TINY-CELL)
+                TINY-CELL))]
+    
+    (cond [(string=? "none" dc) (square SQUARE-W "solid" "transparent")]
+          [else
+           (foldl (λ (trio img)
+                    (above img
+                           (foldl (λ (t row) (beside row (render-t t)))
+                                  empty-image
+                                  trio)))
+                  empty-image
+                  numbers)])))
 
 
 
@@ -1719,61 +1815,101 @@
 (@htdf render-buttons)
 (@signature Game -> Image)
 ;; produce image of buttons in the GUI in their current state
-;!!! todo
-#;#;
 (check-expect
  (render-buttons MTG)
- (above (render-button B-UNDO ((button-pressed? B-UNDO) UNDO))
-        (rectangle 0 BUTTON-MD)
-        (render-button B-HINT ((button-pressed? B-UNDO) HINT))
-        (rectangle 0 BUTTON-MD)
-        (render-button B-SHOW-CH ((button-pressed? B-HOW-CH) MTG))
-        (rectangle 0 BUTTON-MD)
-        (render-button B-WRITE ((button-pressed? B-WRITE) MTG))))
+ (above
+  (render-button B-UNDO (btnstate ((btn-pressed? B-UNDO) MTG) false))
+  (rectangle 0 BUTTON-MD "solid" "white")
+  (render-button B-HINT (btnstate ((btn-pressed? B-HINT) MTG) false))
+  (rectangle 0 BUTTON-MD "solid" "white")
+  (render-button B-SHOW-CH (btnstate ((btn-pressed? B-SHOW-CH) MTG) false))
+  (rectangle 0 BUTTON-MD "solid" "white")
+  (render-button B-WRITE (btnstate ((btn-pressed? B-WRITE) MTG) false))
+  (rectangle 0 BUTTON-MD "solid" "white")))
 (check-expect
  (render-buttons EASY)
- (above (render-button B-UNDO ((button-pressed? B-UNDO) UNDO))
-        (rectangle 0 BUTTON-MD)
-        (render-button B-HINT ((button-pressed? B-UNDO) HINT))
-        (rectangle 0 BUTTON-MD)
-        (render-button B-SHOW-CH ((button-pressed? B-HOW-CH) MTG))
-        (rectangle 0 BUTTON-MD)
-        (render-button B-WRITE ((button-pressed? B-WRITE) MTG))))
-(define (render-buttons g) empty-image)  ;stub
+ (above
+  (render-button B-SOLVE (btnstate ((btn-pressed? B-SOLVE) EASY) false))
+  (rectangle 0 BUTTON-MD "solid" "white")
+  (render-button B-HINT (btnstate ((btn-pressed? B-HINT) EASY) false))
+  (rectangle 0 BUTTON-MD "solid" "white")
+  (render-button B-UNDO (btnstate ((btn-pressed? B-UNDO) EASY) false))
+  (rectangle 0 BUTTON-MD "solid" "white")
+  (render-button B-SHOW-CH (btnstate ((btn-pressed? B-SHOW-CH) EASY) false))
+  (rectangle 0 BUTTON-MD "solid" "white")
+  (render-button B-SHOW-ER (btnstate ((btn-pressed? B-SHOW-ER) EASY) false))
+  (rectangle 0 BUTTON-MD "solid" "white")
+  (render-button B-WRITE (btnstate ((btn-pressed? B-WRITE) EASY) false))
+  (rectangle 0 BUTTON-MD "solid" "white")
+  (render-button B-ERASE (btnstate ((btn-pressed? B-ERASE) EASY) false))
+  (rectangle 0 BUTTON-MD "solid" "white")))
+(check-expect
+ (render-buttons (make-game (make-list 81 empty)
+                            (make-list 81 empty) (make-list 81 empty)
+                            empty empty empty SOLVE OP00
+                            (list "b-hint" "b-solve")
+                            (make-ms BUTTONS-LEF BORDER-TB)))  ;hover B-HINT
+ (above (render-button B-HINT  (btnstate false true))
+        (rectangle 0 BUTTON-MD "solid" "white")
+        (render-button B-SOLVE (btnstate true  false))
+        (rectangle 0 BUTTON-MD "solid" "white")))
+(check-expect
+ (render-buttons (make-game (make-list 81 empty)
+                            (make-list 81 empty) (make-list 81 empty)
+                            empty empty empty SOLVE OP00
+                            (list "b-solve" "b-hint")
+                            (make-ms BUTTONS-LEF BORDER-TB)))  ;hover B-SOLVE
+ (above (render-button B-SOLVE (btnstate true  true))
+        (rectangle 0 BUTTON-MD "solid" "white")
+        (render-button B-HINT  (btnstate false false))
+        (rectangle 0 BUTTON-MD "solid" "white")))
+ 
+;(define (render-buttons g) empty-image)  ;stub
 
 (@template use-abstract-fn)
+(define (render-buttons g)
+  (local [(define lob0 (map lookup-button (game-buttons g)))
+          (define separator (rectangle 0 BUTTON-MD "solid" "white"))
+          (define (render-one b)
+            (render-button b (btnstate ((btn-pressed? b) g)
+                                       false)))]  ;!!! get hover info
+    (foldl (λ (b img) (above img
+                             (render-one b)
+                             separator))
+           empty-image
+           lob0)))
 
 
 
 (@htdf render-button)
 (@signature Button ButtonState -> Image)
 ;; produce image of a single button in GUI in its current state
-(check-expect (render-button B-SHOW-CH NONE)
-              (overlay (text (button-label B-SHOW-CH)
+(check-expect (render-button B-SHOW-CH "none")
+              (overlay (text (btn-label B-SHOW-CH)
                              BUTTON-TEXT-SIZE BUTTON-TEXT-COLOR)
                        (rectangle BUTTONS-W BUTTON-H "solid"
-                                  (button-color B-SHOW-CH))))
-(check-expect (render-button B-UNDO CLICK)
-              (overlay (text (button-label B-UNDO)
+                                  (btn-color B-SHOW-CH))))
+(check-expect (render-button B-UNDO "click")
+              (overlay (text (btn-label B-UNDO)
                              BUTTON-TEXT-SIZE BUTTON-TEXT-COLOR)
                        (rectangle BUTTONS-W BUTTON-H "solid"
-                                  (button-click B-UNDO))))
-(check-expect (render-button B-UNDO HOVER)
-              (overlay (text (button-label B-UNDO)
+                                  (btn-click B-UNDO))))
+(check-expect (render-button B-UNDO "hover")
+              (overlay (text (btn-label B-UNDO)
                              BUTTON-TEXT-SIZE BUTTON-TEXT-COLOR)
                        (rectangle BUTTONS-W BUTTON-H "solid"
-                                  (button-hover B-UNDO))))
+                                  (btn-hover B-UNDO))))
 
 ;(define (render-button b bs) empty-image)  ;stub
 
 (@template Button ButtonState)
-(define (render-button btn bs)
+(define (render-button b bs)
   (local [(define render-color
-            (cond [(string=? "none" bs) (button-color btn)]
-                  [(string=? "click" bs) (button-click btn)]
-                  [(string=? "hover" bs) (button-hover btn)]
+            (cond [(string=? "none" bs) (btn-color b)]
+                  [(string=? "click" bs) (btn-click b)]
+                  [(string=? "hover" bs) (btn-hover b)]
                   [else (error "Not a valid ButtonState")]))]
-    (overlay (text (button-label btn)
+    (overlay (text (btn-label b)
                    BUTTON-TEXT-SIZE BUTTON-TEXT-COLOR)
              (rectangle BUTTONS-W BUTTON-H "solid"
                         render-color))))
@@ -1899,11 +2035,11 @@
 (@signature Game Integer Integer -> Game)
 ;; produce game state for mouse click at x,y (in *button* coordinates)
 (check-expect (buttons-click EASY 0 0)
-              (click-undo EASY))
+              (click-solve EASY))
 (check-expect (buttons-click G5-LAST2 0 (+ BUTTON-H BUTTON-MD))
               (click-hint G5-LAST2))
 (check-expect (buttons-click HARD 0 (* 2 (+ BUTTON-H BUTTON-MD)))
-              (click-solve HARD))
+              (click-undo HARD))
 (check-expect (buttons-click EASY 0 (sub1 (* 2 (+ BUTTON-H BUTTON-MD)))) EASY)
 
 ;(define (buttons-click g x y) g)  ;stub
@@ -1912,7 +2048,7 @@
 (define (buttons-click g x y)
   (local [(define button-index (xy->buttonindex x y))
           (define (get-func i)
-            (button-on/click (list-ref LIST-BUTTONS i)))]
+            (btn-on/click (lookup-button (list-ref (game-buttons g) i))))]
     
     (if (not (false? button-index))
         ((get-func button-index) g)
@@ -1935,8 +2071,9 @@
 
 (@htdf click-solve)
 (@signature Game -> Game)
-;; switch game into SOLVE Mode (autosolve), if initial board was solveable.
-;!!! need to edit button state?
+;; switch game into SOLVE Mode (autosolve), if initial board solveable.
+(check-expect (click-solve (bd->game BD7)) (bd->game BD7))  ;unsolvable
+(check-expect (click-solve G5-DONE-W) G5-DONE-W)
 (check-expect (click-solve EASY) EASY-S)
 (check-expect (click-solve HARD-E) HARD-S)
 
@@ -1944,9 +2081,12 @@
 
 (@template Game)
 (define (click-solve g)
-  (make-game (game-initial g) (game-current g) (game-solution g)
-             (game-prev g) (game-next g) (game-errors g)
-             SOLVE (game-options g) (game-buttons g) (game-mouse g)))
+  (cond [(false? (game-solution g))                  g]
+        [(equal? (game-current g) (game-solution g)) g]
+        [else 
+         (make-game (game-initial g) (game-current g) (game-solution g)
+                    (game-prev g) (game-next g) (game-errors g)
+                    SOLVE (game-options g) (game-buttons g) (game-mouse g))]))
 
 
 (@htdf click-choices)
@@ -2135,17 +2275,55 @@
   (local [(define (lookup-button lob)
             (cond [(empty? lob) (error "No Button exists with this ID")]
                   [else
-                   (if (string=? (button-id (first lob)) id)
+                   (if (string=? (btn-id (first lob)) id)
                        (first lob)
                        (lookup-button (rest lob)))]))]
     (lookup-button LIST-BUTTONS)))
 
 
-(@htdf get-buttonstate)
-(@signature Button Boolean Game -> ButtonState)
-;; produce ButtonState of a button given game state and boolean for mouse hover
+(@htdf btnstate)
+(@signature Boolean Boolean -> ButtonState)
+;; produce ButtonState of a button given booleans for pressed? and mouse hover
+(check-expect (btnstate false false) "none")
+(check-expect (btnstate true  false) "click")
+(check-expect (btnstate false true)  "hover")
+(check-expect (btnstate true  true)  "click") ;!!! no Button?
+
+;(define (btnstate pressed? hover?) "none")  ;stub
+
+(@template Boolean)
+(define (btnstate pressed? hover?)
+  (cond [pressed? "click"]
+        [hover?   "hover"]
+        [else      "none"]))
+
+
+(@htdf xy->buttonid)
+(@signature Game Integer Integer -> ButtonID or false)
+;; produce the ButtonID of button located at coordinates x,y
 ;!!!
-(define (get-buttonstate b hover? g) "none")  ;stub
+;(define (xy->buttonid g x y) false)  ;stub
+
+(@template Integer)
+(define (xy->buttonid g x y)
+  (if (in-buttons? x y)
+      (local [(define i (xy->buttonindex (- x BUTTONS-LEF)
+                                         (- y BUTTONS-TOP)))]
+        (if (false? i)
+            false
+            (list-ref (game-buttons g) i)))
+      false))
 
 
+(@htdf xy->boardpos)
+(@signature Integer Integer -> Pos or false)
+;; produce the Pos of the board square located at coordinates x,y
+;!!!
+;(define (xy->boardpos x y) false)  ;stub
+
+(@template Integer)
+(define (xy->boardpos x y)
+  (if (in-board? x y)
+      (xy->pos (- x BOARD-LEF) (- y BOARD-TOP))
+      false))
 
