@@ -6,7 +6,7 @@ Playable sudoku client written as a HtDW world program in Racket ISL
 ## About
 I developed this program as a culmination of all design patterns learned after 
 completing a course in Systematic Program Design at UBC. That curriculum (CPSC 
-110) is based on [How To Design Programs](http://htdp.org/).
+110) is based on [How to Design Programs](http://htdp.org/).
 
 1. The earliest roots of the sudoku solving algorithm used in this code were 
 from a backtracking search problem taught in class instructional materials. The 
