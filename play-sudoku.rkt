@@ -872,18 +872,35 @@
 
 (@template use-abstract-fn)
 (define (fill-square-w-options sb p0)
-  (local [(define option-list (list-ref sb p0))
-          ;;(@signature Val -> SmartBoard)
-          (define (put-val v)
-            (append (take sb p0)
-                    (list v)
-                    (drop sb (add1 p0))))
-          ;;(@signature Val -> SmartBoard)
-          (define (fill-val-and-clean v)
-            (eliminate-options v p0 (put-val v)))]
-
-    (map fill-val-and-clean
+  (local [(define option-list (list-ref sb p0))]
+    (map (λ (v) (fill-val-and-clean sb v p0))
          option-list)))
+
+
+(@htdf fill-val-and-clean)
+(@signature SmartBoard Val Pos -> SmartBoard)
+;; produce SmartBoard with Val inserted at Pos and constraint sets updated
+(check-expect (fill-val-and-clean SB2 4 9)
+              (eliminate-options 4 9 (append (take SB2 9)
+                                             (list 4)
+                                             (drop SB2 (add1 9)))))
+(check-expect (fill-val-and-clean SB2 7 10)
+              (eliminate-options 7 10 (append (take SB2 10)
+                                              (list 7)
+                                              (drop SB2 (add1 10)))))
+(check-expect (fill-val-and-clean SB3 8 1)
+              (eliminate-options 8 1 (append (take SB3 1)
+                                             (list 8)
+                                             (drop SB3 (add1 1)))))
+
+;(define (fill-val-and-clean sb v p) SB5s)  ;stub
+
+(@template fn-composition)
+(define (fill-val-and-clean sb v p)
+  (eliminate-options v p
+                     (append (take sb p)
+                             (list v)
+                             (drop sb (add1 p)))))
 
 
 
@@ -947,7 +964,7 @@
 (define BUTTON-MD (- SQUARE-W BUTTON-H))
 (define BUTTON-TEXT-SIZE (floor (* 0.65 BUTTON-H)))
 
-(define TINY-TEXT-SIZE (floor (* 0.8 CELL-W)))
+(define TINY-TEXT-SIZE (floor (* 0.9 CELL-W)))
 (define SQUARE-TEXT-SIZE (floor (* 0.8 SQUARE-W)))
 
 (define SML-LINE-SIZE 2)
@@ -1417,10 +1434,10 @@
                  [(in-buttons? x y)
                   (buttons-click updated-g (- x BUTTONS-LEF) (- y BUTTONS-TOP))]
                  [else updated-g])]
-;          [(mouse=? me "move")
-;           (cond [(in-board?   x y)
-;                  (board-hover   updated-g (- x BOARD-LEF)   (- y BOARD-TOP))]
-;                 [else updated-g])]  ;!!! do I need this?
+          ;[(mouse=? me "move")
+          ; (cond [(in-board?   x y)
+          ;        (board-hover   updated-g (- x BOARD-LEF)   (- y BOARD-TOP))]
+          ;       [else updated-g])]  ;!!! do I need this?
           [else updated-g])))
 
 
@@ -1453,64 +1470,54 @@
 
 (@htdf solve-step)
 (@signature Game -> Game)
-;; produce updated game after taking one next step towards known solution
-;!!! can I assume game is solveable?
+;; produce updated game after taking a step towards known solution if any
 (check-expect (solve-step G5-ERR) G5-LAST2)  ;undo error(s)
 (check-expect (solve-step G5-LAST2) G5-LAST1)  ;penultimate placement
 (check-expect (solve-step G5-LAST1) G5-DONE-S)  ;final placement
 (check-expect (solve-step G5-DONE-S)  ;  finished, disable auto-solve
-              (make-game (game-initial G5-DONE-S)
-                         (game-current G5-DONE-S)
-                         (game-solution G5-DONE-S)
-                         (game-prev G5-DONE-S)
-                         (game-next G5-DONE-S)
-                         (game-errors G5-DONE-S)
-                         WRITE
-                         (game-options G5-DONE-S)
-                         (game-buttons G5-DONE-S)
-                         (game-mouse G5-DONE-S)))
+              (make-game (game-initial  G5-DONE-S) (game-current G5-DONE-S)
+                         (game-solution G5-DONE-S) (game-prev    G5-DONE-S)
+                         (game-next     G5-DONE-S) (game-errors  G5-DONE-S)
+                         WRITE                     (game-options G5-DONE-S)
+                         (game-buttons  G5-DONE-S) (game-mouse   G5-DONE-S)))
+(check-expect (solve-step  ;no solution even from initial
+               (local [(define nope (bd->game BD7))]
+                 (make-game (game-initial  nope) (game-current nope)
+                            (game-solution nope) (game-prev    nope)
+                            (game-next     nope) (game-errors  nope)
+                            SOLVE                (game-options nope)
+                            (game-buttons  nope) (game-mouse   nope))))
+              (bd->game BD7))
+                            
 
 ;(define (solve-step g) g)  ;stub
 
 (@template Game)
 (define (solve-step g)
-  (cond [;; Errors present - remove one error
-         (not (empty? (game-errors g)))
-         (make-game (game-initial g)
-                    (erase-square (game-current g)
-                                  (first (game-errors g)))
-                    (game-solution g)
-                    empty  ;(game-prev g)
-                    (game-next g)
-                    (rest (game-errors g))
-                    (game-mode g)
-                    (game-options g)
-                    (game-buttons g)
-                    (game-mouse g))]
-        ;; No errors - take next step to solve
-        [(not (empty? (game-next g)))
-         (make-game (game-initial g)
-                    (first (game-next g))
-                    (game-solution g)
-                    (cons (game-current g) (game-prev g))
-                    (rest (game-next g))
-                    (game-errors g)
-                    (game-mode g)
-                    (game-options g)
-                    (game-buttons g)
-                    (game-mouse g))]
-        ;; Finished - switch from SOLVE mode to WRITE
-        [else
-         (make-game (game-initial g)
-                    (game-current g)
-                    (game-solution g)
-                    (game-prev g)
-                    (game-next g)
-                    (game-errors g)
-                    WRITE
-                    (game-options g)
-                    (game-buttons g)
-                    (game-mouse g))]))
+  (cond ;; Errors present - remove one error
+    [(not (empty? (game-errors g)))
+     (make-game (game-initial g)  (erase-square (game-current g)
+                                                (first (game-errors g)))
+                (game-solution g) empty  ;(game-prev g) !!! sure about this?
+                (game-next g)     (rest (game-errors g))
+                (game-mode g)     (game-options g)
+                (game-buttons g)  (game-mouse g))]
+    ;; No errors - take next step to solve
+    [(not (or (false? (game-solution g))  ;unsolvable
+              (empty? (game-next g))))    ;already solved  ;!!! rearrange?
+     (make-game (game-initial  g) (first (game-next g))
+                (game-solution g) (cons (game-current g)
+                                        (game-prev g))
+                (rest (game-next g)) (game-errors g)
+                (game-mode g)        (game-options g)
+                (game-buttons g)     (game-mouse g))]
+    ;; Unsolvable (or already solved) - switch from SOLVE mode to WRITE
+    [else
+     (make-game (game-initial  g) (game-current g)
+                (game-solution g) (game-prev    g)
+                (game-next     g) (game-errors  g)
+                WRITE             (game-options g)
+                (game-buttons  g) (game-mouse   g))]))
 
 
 (@htdf erase-square)
@@ -1560,8 +1567,8 @@
  (overlay MTBOARD
           (overlay/align "middle" "top"
                          (foldl (λ (sq img)
-                                  (beside img (render-square sq "none"
-                                                             "options")))
+                                  (beside img (render-square sq true
+                                                             "none" "options")))
                                 empty-image
                                 (list 1 4 (list 3 5)
                                       2 6 (list 3 5)
@@ -1576,9 +1583,9 @@
           (define x (ms-x (game-mouse g)))
           (define y (ms-y (game-mouse g)))
           (define hover-undo? (equal? (btn-id B-UNDO)
-                                        (xy->buttonid g x y)))
+                                      (xy->buttonid g x y)))
           (define hover-hint? (equal? (btn-id B-HINT)
-                                        (xy->buttonid g x y)))
+                                      (xy->buttonid g x y)))
           (define hover-pos (xy->boardpos x y))  ;Pos or false
           (define (hover-pos? p)
             (if (not (false? hover-pos)) (= hover-pos p) false))
@@ -1623,6 +1630,7 @@
             (cond [(empty? losq) empty-image]
                   [else
                    (beside (render-square (first losq)
+                                          (list? (list-ref (game-initial g) p))
                                           (get-highlight (first losq) p)
                                           (get-displaycell (first losq) p))
                            (make-row (rest losq) (add1 p)))]))
@@ -1655,42 +1663,99 @@
 (@htdf get-lastmovepos)
 (@signature Game -> Pos or false)
 ;; produce the Pos of most recent added number if prev move data exists
-(define (get-lastmovepos g) false)  ;stub
+(check-expect (get-lastmovepos G5-ERR) 1)
+(check-expect (get-lastmovepos G5-LAST2) false)  ;no move data
+(check-expect (get-lastmovepos G5-LAST1) 1)
+(check-expect (get-lastmovepos G5-DONE-W) 2)
+
+;(define (get-lastmovepos g) false)  ;stub
+
+(@template Game)
+(define (get-lastmovepos g)
+  (cond [(empty? (game-prev g)) false]
+        [else
+         (get-diffnumpos (first (game-prev g))
+                         (game-current g))]))
+
 
 (@htdf get-nextmovepos)
 (@signature Game -> Pos or false)
 ;; produce the Pos of next number to add with hint, if next move data exists
-(define (get-nextmovepos g) false)  ;stub
+;; ASSUME: there are no error moves logged in the game state
+(check-expect (get-nextmovepos G5-DONE-W) false)  ;no move data, solved
+(check-expect (get-nextmovepos (bd->game BD7)) false)  ;no move data, unsolvable
+(check-expect (get-nextmovepos G5-LAST2) 1)
+(check-expect (get-nextmovepos G5-LAST1) 2)
+
+;(define (get-nextmovepos g) false)  ;stub
+
+(@template Game)
+(define (get-nextmovepos g)
+  (cond [(false? (game-solution g)) false]  ;unsolvable
+        [(empty? (game-next g))     false]  ;already solved
+        [else
+         (get-diffnumpos (game-current g)
+                         (first (game-next g)))]))
+
+
+(@htdf get-diffnumpos)
+(@signature SmartBoard SmartBoard -> Pos)
+;; produce the first Position where sb has a list but sb-val has a Val
+;; ASSUME: sb-val has at least one Val that sb does not have
+(check-expect (get-diffnumpos (cons (list 5) (rest SB5s))        SB5s) 0)
+(check-expect (get-diffnumpos (append (list 5 (list 3) (list 9))
+                                      (rest (rest (rest SB5s))))
+                              (append (list 5 3 (list 9))
+                                      (rest (rest (rest SB5s)))))      1)
+(check-expect (get-diffnumpos (append (list 5 3 (list 9))
+                                      (rest (rest (rest SB5s)))) SB5s) 2)
+
+;(define (get-diffnumpos sb sb-val) 0)  ;stub
+
+(@template (listof Square) accumulator)
+(define (get-diffnumpos sb sb-val)
+  ;; count is Pos  ; current Pos of Squares being compared in sb and sb-val
+  (local [(define (get-pos losq losq-val count)
+            (cond [(empty? losq)
+                   (error "No Pos with qualifying diff for sb and sb-val")]
+                  [else
+                   (if (and (list? (first losq))
+                            (number? (first losq-val)))
+                       count
+                       (get-pos (rest losq)
+                                (rest losq-val)
+                                (add1 count)))]))]
+    (get-pos sb sb-val 0)))
 
 
 (@htdf render-square)
-(@signature Square SqHighlight DisplayCell -> Image)
-;; produce image representing a single square in sudoku grid
-(check-expect (render-square 5 "error" "none")
+(@signature Square Boolean SqHighlight DisplayCell -> Image)
+;; produce image of a grid square from info on user/base, highlight, and display
+(check-expect (render-square 5            false "error" "none")
               (overlay (text (number->string 5)
                              SQUARE-TEXT-SIZE BASE-NUM-COLOR)
                        (square SQUARE-W "solid" SQ-COLOR-ERROR)))
-(check-expect (render-square 9 "undo" "none")
+(check-expect (render-square 9            true "undo" "none")
               (overlay (text (number->string 9)
-                             SQUARE-TEXT-SIZE BASE-NUM-COLOR)
+                             SQUARE-TEXT-SIZE USER-NUM-COLOR)
                        (square SQUARE-W "solid" SQ-COLOR-UNDO)))
-(check-expect (render-square empty "none" "none")
+(check-expect (render-square empty        true "none" "none")
               (square SQUARE-W "solid" SQUARE-COLOR))
-(check-expect (render-square (list 5) "hint" "choices")
+(check-expect (render-square (list 5)     true "hint" "choices")
               (overlay (render-tiny (list 5) "choices")
                        (square SQUARE-W "solid" SQ-COLOR-HINT)))
-(check-expect (render-square (list 2 4 8) "hint" "all")
+(check-expect (render-square (list 2 4 8) true "hint" "all")
               (overlay (render-tiny (list 2 4 8) "all")
                        (square SQUARE-W "solid" SQ-COLOR-HINT)))
-(check-expect (render-square ALL-VALS "none" "all")
+(check-expect (render-square ALL-VALS     true "none" "all")
               (overlay (render-tiny ALL-VALS "all")
                        (square SQUARE-W "solid" SQUARE-COLOR)))
 
-;(define (render-square sq sh dc) empty-image)  ;stub
+;(define (render-square sq user? sh dc) empty-image)  ;stub
 
 (@template Square)
 
-(define (render-square sq sh dc)
+(define (render-square sq user? sh dc)
   (local [(define square-background
             (square SQUARE-W "solid"
                     (cond [(string=? "none" sh) SQUARE-COLOR]
@@ -1699,7 +1764,9 @@
                           [(string=? "error" sh) SQ-COLOR-ERROR])))]
     (cond [(number? sq)
            (overlay (text (number->string sq)
-                          SQUARE-TEXT-SIZE BASE-NUM-COLOR)
+                          SQUARE-TEXT-SIZE (if user?
+                                               USER-NUM-COLOR
+                                               BASE-NUM-COLOR))
                     square-background)]
           [(empty? sq)
            square-background]
@@ -1993,14 +2060,132 @@
 (@htdf board-click)
 (@signature Game Integer Integer -> Game)
 ;; produce game state for mouse click at x,y (in *board* coordinates)
+(check-expect (board-click HARD 0 0) (try-write-num HARD 0 0))  ;square full
+(check-expect (board-click EASY (* 8 BOARD-W) (* 8 BOARD-W))
+              (try-write-num EASY (* 8 BOARD-W) (* 8 BOARD-W)))  ;done
+(check-expect (board-click EASY-E 0 0) (try-erase-num EASY-E 0 0))  ;square init
+(check-expect (board-click HARD-E SQUARE-W 0) (try-erase-num HARD-E 0 0))  ;done
+(check-expect (board-click EASY-S (* 2 SQUARE-W) SQUARE-W) EASY-S)  ;solve mode
+
+;!!! add hover color for erasing erasable numbers
+;(define (board-click g x y) g)  ;stub
+
+(@template Game Mode)
+(define (board-click g x y)
+  (local [(define m (game-mode g))]
+    (cond [(string=? m WRITE) (try-write-num g x y)]
+          [(string=? m ERASE)  (try-erase-num g x y)]
+          [(string=? m SOLVE)  g])))
+
+
+(@htdf try-erase-num)
+(@signature Game Integer Integer -> Game)
+;; produce game with removed Val if erasing x,y (board coordinates) is allowed
 ;!!!
-;needs to work through some actions like erase pos and choose write num
-;helper functions?
 ;remove a num (revise game-errors, -current, -next, -prev...)
-;add a num (revise game-errors, -current, -prev, -next, -solution)
-;allow add (restrict options when show ops)
 ;need to distinguish PERMA nums vs. user added?
-(define (board-click g x y) g)  ;stub
+(define (try-erase-num g x y) g)  ;stub
+
+
+(@htdf erase-num)
+(@signature Game Pos -> Game) ;???
+;; produce game state by erasing the Val at Pos
+;; ASSUME: square at Pos is Val not list; square was unfilled on initial board
+(define (erase-num g p) g)  ;stub
+
+
+(@htdf try-write-num)
+(@signature Game Integer Integer -> Game)
+;; produce game with new Val if writing it at x,y (board coordinates) is allowed
+;!!!
+;allow add (restrict options when show ops)
+(define (try-write-num g x y) g)  ;stub
+#;#;
+(@template ???)
+(define (try-write-num g x y)
+  (local [(define pos (xy->pos x y))
+          (define val (xy->tinyval x y))
+          (define square (list-ref (game-current g) pos))]
+    (if (and (list? square)
+             (or (not (ops-showchoices (game-options g)))
+                 (member? val square)))
+        (write-num g val pos)  ;add Val here
+        g)))  ;do nothing
+
+
+(@htdf write-num)
+(@signature Game Val Pos -> Game)
+;; produce game state by adding new Val to the board at Pos
+;!!!
+;add a num (revise game-errors, -current, -prev, -next, -solution)
+(define (write-num g v p) g)  ;stub
+#;#;
+(@template Game)
+(define (write-num g v p)
+  (local [(define old-board (game-current g))
+          (define new-board (fill-val-and-clean old-board v p))
+          (define new-soln (solve new-board))
+          (define new-is-solvable? (not (false? new-soln)))
+          (define best-soln (if new-is-solvable?
+                                new-soln
+                                (game-solution g)))
+          (define soln-square (list-ref best-soln p))  ;always a Val
+          (define val-correct? (= v soln-square))]
+    (make-game (game-initial g)
+               new-board              ;current
+               best-soln              ;solution
+               (cons old-board (game-prev g))  ;prev
+               (if new-is-solvable?            ;next
+                   (solve-steps new-board)
+                   (if val-correct?
+                       (fill-placement-steps (game-next g) v p)
+                       (game-next g)))
+               (if val-correct?                ;errors
+                   (game-errors g)
+                   (cons p (game-errors g)))
+               (game-mode     g) (game-options g)
+               (game-buttons  g) (game-mouse  g))))
+
+
+(@htdf fill-placement-steps)
+(@signature (listof SmartBoard) Val Pos -> (listof SmartBoard))
+;; produce list of solve steps with Val at Pos in all SmartBoards, no duplicates
+(check-expect
+ (fill-placement-steps
+  (list (append (list 5 (list 3) (list 9)) (rest (rest (rest SB5s))))
+        (append (list 5 3 (list 9)) (rest (rest (rest SB5s))))
+        (append (list 5 3 9)(rest (rest (rest SB5s)))))
+  3 1)
+ (list (append (list 5 3 (list 9)) (rest (rest (rest SB5s))))
+       (append (list 5 3 9)(rest (rest (rest SB5s))))))
+(check-expect
+ (fill-placement-steps
+  (list (append (list 5 (list 3) (list 9)) (rest (rest (rest SB5s))))
+        (append (list 5 3 (list 9)) (rest (rest (rest SB5s))))
+        (append (list 5 3 9)(rest (rest (rest SB5s)))))
+  9 2)
+ (list (append (list 5 (list 3) 9) (rest (rest (rest SB5s))))
+       (append (list 5 3 9)(rest (rest (rest SB5s))))))
+;!!!
+;(define (fill-placement-steps losb0 val p) empty)  ;stub
+
+(@template (listof SmartBoard) accumulator)
+(define (fill-placement-steps losb0 v p)
+  (local [(define (fill-steps losb rsf)
+            (cond [(empty? losb)
+                   (error "Did not find val v at pos p in any board")]
+                  [else
+                   (local [(define bd (first losb))
+                           (define square (list-ref bd p))]
+                   (cond [(list? square)
+                          (local [(define new-bd (fill-val-and-clean bd v p))]
+                            (fill-steps (rest losb)
+                                        (append rsf (list new-bd))))]
+                         [else
+                          (if (= square v)
+                              (append rsf (rest losb))  ;produce result
+                              (error "Found mismatch val at board pos"))]))]))]
+    (fill-steps losb0 empty)))
 
 
 (@htdf buttons-click)
@@ -2030,8 +2215,36 @@
 (@htdf click-undo)
 (@signature Game -> Game)
 ;; produce game state after undoing a move, if prev move(s) are known.
-;!!!
-(define (click-undo g) g)  ;stub
+(check-expect (click-undo EASY-E) EASY-E)  ;no prev moves
+(check-expect (click-undo G5-ERR-W)  ;undo error
+              (make-game (game-initial  G5-ERR-W) (first (game-prev G5-ERR-W))
+                         (game-solution G5-ERR-W) (rest  (game-prev G5-ERR-W))
+                         (local [(define try
+                                   (solve-steps (first (game-prev G5-ERR-W))))]
+                           (if (not (false? try))
+                               try
+                               (game-next G5-ERR-W)))
+                         (remove (get-lastmovepos G5-ERR-W)
+                                 (game-errors G5-ERR-W))
+                         (game-mode    G5-ERR-W) (game-options G5-ERR-W)
+                         (game-buttons G5-ERR-W) (game-mouse   G5-ERR-W)))
+(check-expect (click-undo G5-DONE-S) G5-LAST1)  ;undo legit move
+
+;(define (click-undo g) g)  ;stub
+
+(@template Game try-catch)
+(define (click-undo g)
+  (cond [(empty? (game-prev g)) g]  ;no prev moves
+        [else  ;undo a move
+         (make-game (game-initial  g) (first (game-prev g))
+                    (game-solution g) (rest  (game-prev g))
+                    (local [(define try (solve-steps (first (game-prev g))))]
+                      (if (not (false? try))
+                          try
+                          (game-next g)))
+                    (remove (get-lastmovepos g) (game-errors g))
+                    (game-mode    g) (game-options g)
+                    (game-buttons g) (game-mouse   g))]))
 
 
 (@htdf click-hint)
