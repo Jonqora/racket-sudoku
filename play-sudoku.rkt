@@ -1142,36 +1142,35 @@
 
 (@htdd Game)
 (define-struct game [initial current solution
-                             prev next errors
-                             mode options buttons mouse])
-;; Game is (make-game SmartBoard SmartBoard SmartBoard
-;;                    (listof SmartBoard) (listof SmartBoard) (listof Pos)
-;;                    Mode Options Mouse)
+                             prev next
+                             errors mode options buttons mouse])
+;; Game is (make-game SmartBoard SmartBoard SmartBoard|false
+;;                    (listof SmartBoard) (listof SmartBoard)|false
+;;                    (listof Pos) Mode Options (listof Buttons) Mouse)
 ;; INTERP. the state of a playable Sudoku game
 ;;   initial  - SmartBoard of the starting board state
 ;;   current  - SmartBoard of the current board state
-;;   solution - SmartBoard|false
-;;              solved state of the first solution found to current board
-;;              OR last known possible solution prior to recent errors
-;;              OR false if initial state has no solutions
+;;   solution - SmartBoard of the first solution to current board state
+;;              OR solution to most recent solveable state (prior to any errors)
+;;              OR false if game-initial state has no solutions
 ;;   prev     - list of SmartBoards for the board states of all steps
 ;;              taken from initial to just before current
-;;   next     - list of Smartboards for all correct steps after current (minus
-;;              any errors) until a correct solution is reached
+;;   next     - list of Smartboards for all steps after current until solution
+;;              OR false if board is unsolveable from its game-current state
 ;;   errors   - a list of any Positions with numbers put there in error 
 ;;   mode     - current game mode Mode for interactions with the sudoku game
 ;;   options  - state of current selections for game options
 ;;   buttons  - list of buttons used in game and their current states
 ;;   mouse    - stored x,y coordinates of current mouse position
 
-(define MTG (make-game (make-list 81 empty)
-                       (make-list 81 empty)
-                       (make-list 81 empty)
+(define MTG (make-game (make-list 81 A)
+                       (make-list 81 A)
+                       (solve (make-list 81 A))
                        empty
-                       empty
+                       (solve-steps (make-list 81 A))
                        empty
                        WRITE
-                       OP10
+                       OP00
                        BTNS0
                        (make-ms -1 -1)))
 (define EASY (make-game (prep-smartboard SB4-raw)  ;initial
@@ -1240,8 +1239,7 @@
                             SB5s
                             (list (append (list 5 (list 3) (list 9))
                                           (rest (rest (rest SB5s)))))
-                            (solve-steps (append (list 5 (list 3) (list 9))
-                                                 (rest (rest (rest SB5s)))))
+                            false     ;current state unsolveable
                             (list 1)  ;has error
                             WRITE
                             OP00
@@ -1253,8 +1251,7 @@
                           SB5s
                           (list (append (list 5 (list 3) (list 9))
                                         (rest (rest (rest SB5s)))))
-                          (solve-steps (append (list 5 (list 3) (list 9))
-                                               (rest (rest (rest SB5s)))))
+                          false     ;current state unsolveable
                           (list 1)  ;has error
                           SOLVE
                           OP00
@@ -1519,30 +1516,38 @@
 
 (@template Game)
 (define (solve-step g)
-  (cond ;; Errors present - remove one error
+  (cond
+    ;; Unsolvable (or already solved) - switch from SOLVE mode to WRITE
+    [(or (false? (game-solution g))  ;wholly unsolvable
+         (empty? (game-next g)))     ;already solved  ;!!!move to other fn?
+     (make-game (game-initial  g) (game-current g)
+                (game-solution g) (game-prev    g)
+                (game-next     g) (game-errors  g)
+                WRITE             (game-options g)
+                (game-buttons  g) (game-mouse   g))]
+    ;; Previously solveable but error(s) are present - remove one error
     [(not (empty? (game-errors g)))
-     (make-game (game-initial g)  (erase-square (game-current g)
-                                                (first (game-errors g)))
-                (game-solution g) (cons (game-current g) (game-prev g))
-                (game-next g)     (rest (game-errors g))
-                (game-mode g)     (game-options g)
-                (game-buttons g)  (game-mouse g))]
-    ;; No errors - take next step to solve
-    [(and (not (false? (game-solution g)))  ;not unsolvable
-          (not (empty? (game-next g))))    ;not already solved
+     (local [(define first-error (first (game-errors g)))
+             (define remaining-errors (rest (game-errors g)))
+             (define next-board
+               (erase-square (game-current g) first-error))]
+       (make-game (game-initial g)  next-board
+                  (game-solution g) (cons (game-current g)
+                                          (game-prev g))
+                  (if (empty? remaining-errors)
+                      (solve-steps next-board)
+                      (game-next g))  ;this case always #false
+                  remaining-errors
+                  (game-mode g)     (game-options g)
+                  (game-buttons g)  (game-mouse g)))]
+    ;; Solveable with no errors - take next step to solve
+    [else
      (make-game (game-initial  g) (first (game-next g))
                 (game-solution g) (cons (game-current g)
                                         (game-prev g))
                 (rest (game-next g)) (game-errors g)
                 (game-mode g)        (game-options g)
-                (game-buttons g)     (game-mouse g))]
-    ;; Unsolvable (or already solved) - switch from SOLVE mode to WRITE
-    [else
-     (make-game (game-initial  g) (game-current g)
-                (game-solution g) (game-prev    g)
-                (game-next     g) (game-errors  g)
-                WRITE             (game-options g)
-                (game-buttons  g) (game-mouse   g))]))
+                (game-buttons g)     (game-mouse g))]))
 
 
 (@htdf erase-square)
@@ -1707,7 +1712,7 @@
 (@htdf get-nextmovepos)
 (@signature Game -> Pos or false)
 ;; produce the Pos of next number to add with hint, if next move data exists
-;; ASSUME: there are no error moves logged in the game state
+;; ASSUME: no errors logged and board-current is solveable (not empty? next)
 (check-expect (get-nextmovepos G5-DONE-W) false)  ;no move data, solved
 (check-expect (get-nextmovepos (bd->game BD7)) false)  ;no move data, unsolvable
 (check-expect (get-nextmovepos G5-LAST2) 1)
@@ -1717,8 +1722,8 @@
 
 (@template Game)
 (define (get-nextmovepos g)
-  (cond [(false? (game-solution g)) false]  ;unsolvable
-        [(empty? (game-next g))     false]  ;already solved
+  (cond [(false? (game-next g)) false]  ;current state is unsolvable
+        [(empty? (game-next g)) false]  ;already solved
         [else
          (get-diffpos (game-current g)
                       (first (game-next g)))]))
@@ -2133,7 +2138,7 @@
 (@signature Game Pos -> Game)
 ;; produce game state by erasing the Val at Pos
 ;; ASSUME: square at Pos is Val not list; square was unfilled on initial board
-(check-expect (erase-num G5-ERR-W 1)  ;has error(s), erase error at Pos 1
+(check-expect (erase-num G5-ERR-W 1)  ;has 1 error, erase error at Pos 1
               (make-game (prep-smartboard SB5-raw)
                          (append (list 5 (list 3) (list 9))  ;remove, constrain,
                                  (rest (rest (rest SB5s))))  ;restore
@@ -2145,10 +2150,7 @@
                          (solve-steps (append (list 5 (list 3) (list 9))  ;solve
                                               (rest (rest (rest SB5s)))))
                          (remove 1 (list 1))
-                         WRITE  ;same
-                         OP00   ;same
-                         BTNS2  ;same
-                         (make-ms -1 -1)))  ;same
+                         WRITE OP00 BTNS2 (make-ms -1 -1)))  ;same
 (check-expect  ;has error(s), erase correct Val 1 at Pos 3
  (erase-num
   (make-game (prep-smartboard SB5-raw)  ;similar to G5-ERR-W
@@ -2159,13 +2161,9 @@
                            (rest (rest (rest (rest SB5s)))))
                    (append (list 5 (list 3) (list 9) (list 1))
                            (rest (rest (rest (rest SB5s))))))
-             (solve-steps (append (list 5 (list 3) (list 9) 1)  ;from pre-error
-                                  (rest (rest (rest (rest SB5s))))))
+             false  ;error made board state unsolveable
              (list 1)  ;has error - Val 2 at Pos 1
-             ERASE
-             OP00
-             BTNS2
-             (make-ms -1 -1))
+             ERASE OP00 BTNS2 (make-ms -1 -1))
   3)
  (make-game (prep-smartboard SB5-raw)
             (append (list 5 2 (list 9) (list 1))  ;ALL-VALS, prune, restore
@@ -2177,14 +2175,9 @@
                           (rest (rest (rest (rest SB5s)))))
                   (append (list 5 (list 3) (list 9) (list 1))
                           (rest (rest (rest (rest SB5s))))))
-            (solve-steps (append (list 5 (list 3) (list 9) 1)  ;stay same
-                                 (rest (rest (rest (rest SB5s))))))
-            ;!!! special case, recalc steps whenever removing the last error?
+            false  ;current state still unsolveable with error 
             (list 1)  ;still has error - Val 2 at Pos 1
-            ERASE
-            OP00
-            BTNS2
-            (make-ms -1 -1)))
+            ERASE OP00 BTNS2 (make-ms -1 -1)))
 (check-expect (erase-num G5-LAST2 30)  ;no errors, erase correct Val at Pos 30
               (local [(define new-bd
                         (erase-square (game-current G5-LAST2) 30))
@@ -2195,9 +2188,7 @@
                            (game-solution G5-LAST2)
                            (cons (game-current G5-LAST2)  ;cons to prev
                                  (game-prev G5-LAST2))
-                           (if (empty? updated-errors)
-                               (solve-steps new-bd)
-                               (game-next G5-LAST2))
+                           (solve-steps new-bd)  ;bc updated-errors is now empty
                            updated-errors  ;fine to do the same way
                            (game-mode G5-LAST2)
                            (game-options G5-LAST2)
@@ -2258,18 +2249,62 @@
 (@signature Game Val Pos -> Game)
 ;; produce game state by adding new Val to the board at Pos
 ;; ASSUME: Pos on board contains a (listof Val)
-;!!!
-;TEST: invalid move, incorrect but valid, correct move
-;      correct onto board with error(s), 
-;add a num (revise game-errors, -current, -prev, -next, -solution)
-(define (write-num g v p) EASY)  ;stub
-#;#;
+(check-expect (write-num G5-LAST2 3 1) G5-LAST1)  ;correct move
+(check-expect (write-num G5-LAST2 5 2)  ;invalid move
+              (make-game (prep-smartboard SB5-raw)
+                         (append (list 5 (list 3) 5)
+                                 (rest (rest (rest SB5s))))
+                         SB5s
+                         (list (append (list 5 (list 3) (list 9))
+                                       (rest (rest (rest SB5s))))
+                               (append (list 5 2 (list 9))
+                                       (rest (rest (rest SB5s))))
+                               (append (list 5 (list 3) (list 9))
+                                       (rest (rest (rest SB5s)))))
+                         false  ;new board invalid
+                         (list 2)
+                         SOLVE OP00 BTNS2 (make-ms -1 -1)))
+(check-expect (write-num (bd->game BD6) 2 0)  ;incorrect but valid
+              (local [(define HARDEST (bd->game BD6))]
+                (make-game (game-initial HARDEST)
+                           (fill-val-and-clean (game-current HARDEST) 2 0)
+                           (game-solution HARDEST)  ;keep last known solution
+                           (cons (game-current HARDEST) (game-prev HARDEST))
+                           false  ;new state has error, not solveable
+                           (cons 0 (game-errors HARDEST))
+                           (game-mode    HARDEST) (game-options HARDEST)
+                           (game-buttons HARDEST) (game-mouse   HARDEST))))
+(check-expect (write-num G5-ERR-W 9 2)  ;correct onto board with error(s)
+              (make-game (game-initial G5-ERR-W)
+                         (fill-val-and-clean (game-current G5-ERR-W) 9 2)
+                         (game-solution G5-ERR-W)  ;(still not solveable)
+                         (cons (game-current G5-ERR-W) (game-prev G5-ERR-W))
+                         (game-next G5-ERR-W)  ;false (new still not solveable)
+                         (game-errors G5-ERR-W)  ;no *new* errors
+                         (game-mode    G5-ERR-W) (game-options G5-ERR-W)
+                         (game-buttons G5-ERR-W) (game-mouse   G5-ERR-W)))
+(check-expect (write-num (bd->game BD3) 6 1)  ;find another valid solution
+              (local [(define MULTI (bd->game BD3))
+                      (define new-bd
+                        (fill-val-and-clean (game-current MULTI) 6 1))]
+                (make-game (game-initial MULTI)
+                           new-bd
+                           (solve new-bd)  ;(new IS solveable)
+                           (cons (game-current MULTI) (game-prev MULTI))
+                           (solve-steps new-bd)  ;(new IS solveable)
+                           (game-errors MULTI)
+                           (game-mode    MULTI) (game-options MULTI)
+                           (game-buttons MULTI) (game-mouse   MULTI))))
+
+;(define (write-num g v p) EASY)  ;stub
+
 (@template Game)
 (define (write-num g v p)
   (local [(define old-board (game-current g))
           (define is-valid-move? (member? v (list-ref old-board p)))
           (define new-board (fill-val-and-clean old-board v p))
-          (define new-soln (if is-valid-move?
+          (define new-soln (if (and (not (false? (game-next g)))  ;solveable b4
+                                    is-valid-move?)               ;new move OK
                                (solve new-board)
                                false))
           (define new-is-solvable? (not (false? new-soln)))
@@ -2284,16 +2319,14 @@
                (cons old-board (game-prev g))  ;prev
                (if new-is-solvable?            ;next
                    (solve-steps new-board)
-                   (if val-correct?
-                       (fill-placement-steps (game-next g) v p)
-                       (game-next g)))
+                   false)
                (if (and is-valid-move? val-correct?)  ;errors
                    (game-errors g)
                    (cons p (game-errors g)))
                (game-mode     g) (game-options g)
                (game-buttons  g) (game-mouse  g))))
 
-
+;!!! dono't need?
 (@htdf fill-placement-steps)
 (@signature (listof SmartBoard) Val Pos -> (listof SmartBoard))
 ;; produce list of solve steps with Val at Pos in all SmartBoards, no duplicates
@@ -2364,35 +2397,55 @@
 (@signature Game -> Game)
 ;; produce game state after undoing a move, if prev move(s) are known.
 (check-expect (click-undo EASY-E) EASY-E)  ;no prev moves
-(check-expect (click-undo G5-ERR-W)  ;undo error
+(check-expect (click-undo G5-ERR-W)  ;undo only error
               (make-game (game-initial  G5-ERR-W) (first (game-prev G5-ERR-W))
                          (game-solution G5-ERR-W) (rest  (game-prev G5-ERR-W))
-                         (local [(define try
-                                   (solve-steps (first (game-prev G5-ERR-W))))]
-                           (if (not (false? try))
-                               try
-                               (game-next G5-ERR-W)))
+                         (solve-steps (first (game-prev G5-ERR-W)))
                          (remove (get-lastmovepos G5-ERR-W)
                                  (game-errors G5-ERR-W))
                          (game-mode    G5-ERR-W) (game-options G5-ERR-W)
                          (game-buttons G5-ERR-W) (game-mouse   G5-ERR-W)))
 (check-expect (click-undo G5-DONE-S) G5-LAST1)  ;undo legit move
+(check-expect ;undo legit move but previous error(s) remain
+ (click-undo
+  (make-game (prep-smartboard SB5-raw)  ;similar-ish to G5-ERR-W
+             (append (list 5 2 (list 9) 1)
+                     (rest (rest (rest (rest SB5s)))))
+             SB5s
+             (list (append (list 5 2 (list 9) (list 1))  ;last 2 moves
+                           (rest (rest (rest (rest SB5s)))))
+                   (append (list 5 (list 3) (list 9) (list 1))
+                           (rest (rest (rest (rest SB5s))))))
+             false  ;error made board state unsolveable
+             (list 1)  ;has error - Val 2 at Pos 1
+             WRITE OP00 BTNS2 (make-ms -1 -1)))
+ (make-game (prep-smartboard SB5-raw)
+            (append (list 5 2 (list 9) (list 1))  ;ALL-VALS, prune, restore
+                    (rest (rest (rest (rest SB5s)))))
+            SB5s
+            (list (append (list 5 (list 3) (list 9) (list 1))  ;last 1 move
+                          (rest (rest (rest (rest SB5s))))))
+            false  ;current state still unsolveable with error 
+            (list 1)  ;still has error - Val 2 at Pos 1
+            WRITE OP00 BTNS2 (make-ms -1 -1)))
 
 ;(define (click-undo g) g)  ;stub
 
-(@template Game try-catch)
+(@template Game)
 (define (click-undo g)
   (cond [(empty? (game-prev g)) g]  ;no prev moves
         [else  ;undo a move
-         (make-game (game-initial  g) (first (game-prev g))
-                    (game-solution g) (rest  (game-prev g))
-                    (local [(define try (solve-steps (first (game-prev g))))]
-                      (if (not (false? try))
-                          try
-                          (game-next g)))
-                    (remove (get-lastmovepos g) (game-errors g))
-                    (game-mode    g) (game-options g)
-                    (game-buttons g) (game-mouse   g))]))
+         (local [(define updated-errors
+                   (remove (get-lastmovepos g) (game-errors g)))]
+           (make-game (game-initial  g) (first (game-prev g))
+                      (game-solution g) (rest  (game-prev g))
+                      (if (and (empty? updated-errors)  ;update if new solveable
+                               (not (false? (game-solution g))))
+                          (solve-steps (first (game-prev g)))
+                          (game-next g))  ;false
+                      updated-errors
+                      (game-mode    g) (game-options g)
+                      (game-buttons g) (game-mouse   g)))]))
 
 
 (@htdf click-hint)
@@ -2406,7 +2459,8 @@
                                  (rest (rest (rest SB5s))))
                          (game-solution G5-ERR-W)
                          (cons (game-current G5-ERR-W) (game-prev G5-ERR-W))
-                         (game-next G5-ERR-W)
+                         (solve-steps (append (list 5 (list 3) (list 9))
+                                              (rest (rest (rest SB5s)))))
                          (rest (game-errors G5-ERR-W))
                          (game-mode G5-ERR-W)
                          (game-options G5-ERR-W)
