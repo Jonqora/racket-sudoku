@@ -1421,11 +1421,11 @@
 (@template htdw-main)
 
 (define (main g)
-  (big-bang g                   ; Game
-    (on-tick   tock)            ; Game -> Game
-    (to-draw   render)          ; Game -> Image
-    (on-mouse  handle-mouse)))  ; Game Integer Integer MouseEvent -> Game
-;(on-key    ...)))  ; Game KeyEvent -> Game
+  (big-bang g                 ; Game
+    (on-tick   tock)          ; Game -> Game
+    (to-draw   render)        ; Game -> Image
+    (on-mouse  handle-mouse)  ; Game Integer Integer MouseEvent -> Game
+    (name "Super Sudoku | by Ellen Lloyd")))
 
 
 (@htdf tock)
