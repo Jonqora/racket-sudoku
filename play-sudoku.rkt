@@ -370,7 +370,7 @@
                         A 6 A 4 A A 1 8 A
                         A 7 A A 6 1 A A 3
                         A A A A A 9 A 6 5))
-(define BANK3-raw (list A A A A A A 2 A A
+(define BANK3-raw (list A A A A A A A 2 A
                         1 A 7 A A A A 5 6
                         6 A 9 5 A A 8 A 7
                         8 A A A A 1 4 A 2
@@ -398,7 +398,7 @@
                         A A 3 4 7 5 6 A A
                         7 A 9 A A 8 A A 3))
 (define PUZZLE-BANK
-  (list SB4-raw  ;used for EASY game def
+  (list SB4-raw SB5-raw SB6-raw  ;SB4/5 correspond to EASY/HARD game defs
         BANK1-raw BANK2-raw BANK3-raw BANK4-raw BANK5-raw))
 
 
@@ -1623,7 +1623,7 @@
                                           (game-prev g))
                   (if (empty? remaining-errors)
                       (solve-steps next-board)
-                      (game-next g))  ;this case always #false
+                      (game-next g))  ;this case always #false?
                   remaining-errors
                   (game-mode g)     (game-options g)
                   (game-buttons g)  (game-mouse g)))]
@@ -2108,15 +2108,9 @@
 
 (@template Game)
 (define (mouse-xy x y g)
-  (make-game (game-initial g)
-             (game-current g)
-             (game-solution g)
-             (game-prev g)
-             (game-next g)
-             (game-errors g)
-             (game-mode g)
-             (game-options g)
-             (game-buttons g)
+  (make-game (game-initial g) (game-current g) (game-solution g)
+             (game-prev g) (game-next g) (game-errors g)
+             (game-mode g) (game-options g) (game-buttons g)
              (make-ms x y)))
 
 
@@ -2918,4 +2912,4 @@
 
 ;; =================
 ;; Start world...
-(main EASY)
+(main (sb->game SB6-raw))
