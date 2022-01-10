@@ -352,6 +352,54 @@
         A A A A A A A A 7
         A A A A A A A A 8
         A A A A A A A A 9))
+(define BANK1-raw (list 2 9 A A A 4 A A A
+                        7 1 A A 5 8 A A 2
+                        A A A A 1 9 5 A A
+                        1 3 A A A 5 6 A A
+                        A 2 A 1 9 6 A 4 A
+                        A A 9 8 A A A 5 1
+                        A A 1 4 8 A A A A
+                        4 A A 5 2 A A 1 8
+                        A A A 9 A A A 3 5))
+(define BANK2-raw (list 4 3 A 2 A A A A A
+                        7 A A 5 8 A A 1 A
+                        A 5 2 A A 6 A 4 A
+                        A 1 9 A 7 3 8 A A
+                        3 A A 9 A 5 A A 1
+                        A A 7 1 4 A 5 3 A
+                        A 6 A 4 A A 1 8 A
+                        A 7 A A 6 1 A A 3
+                        A A A A A 9 A 6 5))
+(define BANK3-raw (list A A A A A A 2 A A
+                        1 A 7 A A A A 5 6
+                        6 A 9 5 A A 8 A 7
+                        8 A A A A 1 4 A 2
+                        4 A A 6 A 8 A A 3
+                        7 A 5 2 A A A A 8
+                        2 A 1 A A 3 9 A 5
+                        3 5 A A A A 7 A 1
+                        A 7 A A A A A A A))
+(define BANK4-raw (list 9 A A 8 A A A A 4
+                        A 7 4 A 3 A 8 A A
+                        A 2 A 1 A A A A 7
+                        6 A A A A 1 A A A
+                        5 A 2 6 A 4 1 A 9
+                        A A A 7 A A A A 5
+                        3 A A A A 7 A 9 A
+                        A A 9 A 6 A 5 2 A
+                        2 A A A A 5 A A 8))
+(define BANK5-raw (list 9 A A 6 A A 1 A 2
+                        A A 6 2 9 7 3 A A
+                        A 7 A A A A A A A
+                        A 1 5 A A A A A 6
+                        2 A A A A A A A 1
+                        6 A A A A A 7 5 A
+                        A A A A A A A 8 A
+                        A A 3 4 7 5 6 A A
+                        7 A 9 A A 8 A A 3))
+(define PUZZLE-BANK
+  (list SB4-raw  ;used for EASY game def
+        BANK1-raw BANK2-raw BANK3-raw BANK4-raw BANK5-raw))
 
 
 ;; -------------------
@@ -1046,9 +1094,15 @@
                           (λ (g) (click-erase g))
                           (λ (g) (string=? (game-mode g) ERASE))
                           "Violet" "HotPink" "LightPink"))
+(define B-RESET (make-btn "b-reset" "Reset"
+                          (λ (g) (click-reset g)) (λ (_) false)
+                          "Violet" "HotPink" "LightPink"))
+(define B-NEW (make-btn "b-new" "New Game"
+                        (λ (g) (click-new g)) (λ (_) false)
+                        "Violet" "HotPink" "LightPink"))
 
-(define LIST-BUTTONS (list B-UNDO B-HINT B-SOLVE
-                           B-SHOW-CH B-SHOW-ER B-WRITE B-ERASE))
+(define LIST-BUTTONS (list B-WRITE B-ERASE B-UNDO B-HINT B-SOLVE
+                           B-SHOW-CH B-SHOW-ER B-RESET B-NEW))
 (define NUM-BUTTONS (length LIST-BUTTONS))
 
 
@@ -1084,8 +1138,9 @@
 ;; ButtonsData is (listof ButtonID)
 ;; Note: is an ordered list (rendered top to bottom) of all buttons in game
 (define BTNS0 (list "b-undo" "b-hint" "b-showch" "b-write"))
-(define BTNS1 
-  (list "b-undo" "b-hint" "b-solve" "b-showch" "b-shower" "b-write" "b-erase"))
+(define BTNS1  ;default
+  (list "b-write" "b-erase" "b-undo" "b-hint" "b-solve"
+        "b-showch" "b-shower" "b-reset" "b-new"))
 (define BTNS2
   (list "b-solve" "b-hint" "b-undo" "b-showch" "b-shower" "b-write" "b-erase"))
 
@@ -1140,6 +1195,18 @@
 
 
 
+;; =================
+;; Default Constants:
+(define DEFAULT-MODE WRITE)
+(define DEFAULT-OPS OP00)
+(define DEFAULT-BUTTONS BTNS1)
+(define DEFAULT-MOUSE (make-ms -1 -1))
+
+
+
+;; =================
+;; WorldState Data Definition:
+
 (@htdd Game)
 (define-struct game [initial current solution
                              prev next
@@ -1181,7 +1248,7 @@
                         empty                 ;errors
                         WRITE                 ;mode
                         OP00                  ;options
-                        BTNS2                  ;buttons
+                        DEFAULT-BUTTONS       ;buttons
                         (make-ms -1 -1)))     ;mouse x y
 (define EASY-E (make-game (prep-smartboard SB4-raw) 
                           (prep-smartboard SB4-raw)  
@@ -1191,7 +1258,7 @@
                           empty                 
                           ERASE                 
                           OP00
-                          BTNS2
+                          DEFAULT-BUTTONS
                           (make-ms -1 -1)))     
 (define EASY-S (make-game (prep-smartboard SB4-raw)  
                           (prep-smartboard SB4-raw)  
@@ -1201,7 +1268,7 @@
                           empty                 
                           SOLVE                 
                           OP00
-                          BTNS2
+                          DEFAULT-BUTTONS
                           (make-ms -1 -1)))     
 (define HARD (make-game (prep-smartboard SB5-raw)
                         (prep-smartboard SB5-raw)
@@ -1211,7 +1278,7 @@
                         empty
                         WRITE
                         OP00
-                        BTNS2
+                        DEFAULT-BUTTONS
                         (make-ms -1 -1)))
 (define HARD-E (make-game (prep-smartboard SB5-raw)
                           (prep-smartboard SB5-raw)
@@ -1221,7 +1288,7 @@
                           empty
                           ERASE
                           OP00
-                          BTNS2
+                          DEFAULT-BUTTONS
                           (make-ms -1 -1)))
 (define HARD-S (make-game (prep-smartboard SB5-raw)
                           (prep-smartboard SB5-raw)
@@ -1231,7 +1298,7 @@
                           empty
                           SOLVE
                           OP00
-                          BTNS2
+                          DEFAULT-BUTTONS
                           (make-ms -1 -1)))
 (define G5-ERR-W (make-game (prep-smartboard SB5-raw)
                             (append (list 5 2 (list 9))
@@ -1243,7 +1310,7 @@
                             (list 1)  ;has error
                             WRITE
                             OP00
-                            BTNS2
+                            DEFAULT-BUTTONS
                             (make-ms -1 -1)))
 (define G5-ERR (make-game (prep-smartboard SB5-raw)
                           (append (list 5 2 (list 9))
@@ -1255,7 +1322,7 @@
                           (list 1)  ;has error
                           SOLVE
                           OP00
-                          BTNS2
+                          DEFAULT-BUTTONS
                           (make-ms -1 -1)))
 (define G5-LAST2 (make-game (prep-smartboard SB5-raw)
                             (append (list 5 (list 3) (list 9))
@@ -1270,7 +1337,7 @@
                             empty
                             SOLVE
                             OP00
-                            BTNS2
+                            DEFAULT-BUTTONS
                             (make-ms -1 -1)))
 (define G5-LAST1 (make-game (prep-smartboard SB5-raw)
                             (append (list 5 3 (list 9))
@@ -1287,7 +1354,7 @@
                             empty
                             SOLVE
                             OP00
-                            BTNS2
+                            DEFAULT-BUTTONS
                             (make-ms -1 -1)))
 (define G5-DONE-S (make-game (prep-smartboard SB5-raw)
                              SB5s
@@ -1304,7 +1371,7 @@
                              empty
                              SOLVE
                              OP00
-                             BTNS2
+                             DEFAULT-BUTTONS
                              (make-ms -1 -1)))
 (define G5-DONE-W (make-game (prep-smartboard SB5-raw)
                              SB5s
@@ -1321,7 +1388,7 @@
                              empty
                              WRITE
                              OP00
-                             BTNS2
+                             DEFAULT-BUTTONS
                              (make-ms -1 -1)))
 (define G5-LAST2-W/OP (make-game (game-initial G5-LAST2)
                                  (game-current G5-LAST2)
@@ -1333,15 +1400,6 @@
                                  OP10  ;show options
                                  (game-buttons G5-LAST2)
                                  (game-mouse G5-LAST2)))
-
-
-
-;; =================
-;; Default Constants:
-(define DEFAULT-MODE WRITE)
-(define DEFAULT-OPS OP00)
-(define DEFAULT-BUTTONS BTNS2)
-(define DEFAULT-MOUSE (make-ms -1 -1))
 
 
 
@@ -1472,12 +1530,20 @@
 (check-expect (bd->game BD4) EASY)
 (check-expect (bd->game BD5) HARD)
 
-;(define (bd->game bd) EASY)  ;stub
+(@template fn-composition)
+(define (bd->game bd)
+  (sb->game (bd->smartboard bd)))
+
+
+(@htdf sb->game)
+(@signature Board -> Game)
+;; produce the starting state of a playable Sudoku game from a SmartBoard
+(check-expect (sb->game SB4-raw) EASY)
+(check-expect (sb->game SB5-raw) HARD)
 
 (@template fn-composition)
-
-(define (bd->game bd)
-  (local [(define sb (prep-smartboard (bd->smartboard bd)))]
+(define (sb->game sb0)
+  (local [(define sb (prep-smartboard sb0))]
     (make-game sb                ;initial
                sb                ;current
                (solve sb)        ;solution
@@ -1889,19 +1955,23 @@
 (check-expect
  (render-buttons EASY)
  (above
-  (render-button B-SOLVE (btnstate ((btn-pressed? B-SOLVE) EASY) false))
+  (render-button B-WRITE (btnstate ((btn-pressed? B-WRITE) EASY) false))
+  (rectangle 0 BUTTON-MD "solid" "white")
+  (render-button B-ERASE (btnstate ((btn-pressed? B-ERASE) EASY) false))
+  (rectangle 0 BUTTON-MD "solid" "white")
+  (render-button B-UNDO (btnstate ((btn-pressed? B-UNDO) EASY) false))
   (rectangle 0 BUTTON-MD "solid" "white")
   (render-button B-HINT (btnstate ((btn-pressed? B-HINT) EASY) false))
   (rectangle 0 BUTTON-MD "solid" "white")
-  (render-button B-UNDO (btnstate ((btn-pressed? B-UNDO) EASY) false))
+  (render-button B-SOLVE (btnstate ((btn-pressed? B-SOLVE) EASY) false))
   (rectangle 0 BUTTON-MD "solid" "white")
   (render-button B-SHOW-CH (btnstate ((btn-pressed? B-SHOW-CH) EASY) false))
   (rectangle 0 BUTTON-MD "solid" "white")
   (render-button B-SHOW-ER (btnstate ((btn-pressed? B-SHOW-ER) EASY) false))
   (rectangle 0 BUTTON-MD "solid" "white")
-  (render-button B-WRITE (btnstate ((btn-pressed? B-WRITE) EASY) false))
+  (render-button B-RESET (btnstate ((btn-pressed? B-RESET) EASY) false))
   (rectangle 0 BUTTON-MD "solid" "white")
-  (render-button B-ERASE (btnstate ((btn-pressed? B-ERASE) EASY) false))
+  (render-button B-NEW (btnstate ((btn-pressed? B-NEW) EASY) false))
   (rectangle 0 BUTTON-MD "solid" "white")))
 (check-expect
  (render-buttons (make-game (make-list 81 empty)
@@ -2150,7 +2220,7 @@
                          (solve-steps (append (list 5 (list 3) (list 9))  ;solve
                                               (rest (rest (rest SB5s)))))
                          (remove 1 (list 1))
-                         WRITE OP00 BTNS2 (make-ms -1 -1)))  ;same
+                         WRITE OP00 DEFAULT-BUTTONS (make-ms -1 -1)))  ;same
 (check-expect  ;has error(s), erase correct Val 1 at Pos 3
  (erase-num
   (make-game (prep-smartboard SB5-raw)  ;similar to G5-ERR-W
@@ -2263,7 +2333,7 @@
                                        (rest (rest (rest SB5s)))))
                          false  ;new board invalid
                          (list 2)
-                         SOLVE OP00 BTNS2 (make-ms -1 -1)))
+                         SOLVE OP00 DEFAULT-BUTTONS (make-ms -1 -1)))
 (check-expect (write-num (bd->game BD6) 2 0)  ;incorrect but valid
               (local [(define HARDEST (bd->game BD6))]
                 (make-game (game-initial HARDEST)
@@ -2326,7 +2396,7 @@
                (game-mode     g) (game-options g)
                (game-buttons  g) (game-mouse  g))))
 
-;!!! dono't need?
+;!!! don't need?
 (@htdf fill-placement-steps)
 (@signature (listof SmartBoard) Val Pos -> (listof SmartBoard))
 ;; produce list of solve steps with Val at Pos in all SmartBoards, no duplicates
@@ -2372,13 +2442,16 @@
 (@htdf buttons-click)
 (@signature Game Integer Integer -> Game)
 ;; produce game state for mouse click at x,y (in *button* coordinates)
-(check-expect (buttons-click EASY 0 0)
-              (click-solve EASY))
+(check-expect (buttons-click EASY-E 0 0)
+              (click-write EASY))
 (check-expect (buttons-click G5-LAST2 0 (+ BUTTON-H BUTTON-MD))
-              (click-hint G5-LAST2))
-(check-expect (buttons-click HARD 0 (* 2 (+ BUTTON-H BUTTON-MD)))
-              (click-undo HARD))
-(check-expect (buttons-click EASY 0 (sub1 (* 2 (+ BUTTON-H BUTTON-MD)))) EASY)
+              (click-erase G5-LAST2))
+(check-expect (buttons-click G5-ERR 0 (* 2 (+ BUTTON-H BUTTON-MD)))
+              (click-undo G5-ERR))
+(check-expect (buttons-click HARD 0 (* 3 (+ BUTTON-H BUTTON-MD)))
+              (click-hint HARD))
+(check-expect (buttons-click EASY 0  ;gap between HINT and SOLVE
+                             (sub1 (* 4 (+ BUTTON-H BUTTON-MD)))) EASY)
 
 ;(define (buttons-click g x y) g)  ;stub
 
@@ -2504,6 +2577,60 @@
          (make-game (game-initial g) (game-current g) (game-solution g)
                     (game-prev g) (game-next g) (game-errors g)
                     SOLVE (game-options g) (game-buttons g) (game-mouse g))]))
+
+
+(@htdf click-reset)
+(@signature Game -> Game)
+;; produce game after resetting to its initial state
+(check-expect (click-reset EASY) EASY)  ;already in initial state
+(check-expect (click-reset (write-num EASY 3 10)) EASY)  ;undo one move
+(check-expect (click-reset G5-ERR) HARD)
+(check-expect (click-reset G5-LAST2-W/OP) HARD)
+(check-expect (click-reset G5-DONE-S) HARD)
+
+;(define (click-reset g) g)  ;stub
+
+(@template Game)
+(define (click-reset g)
+  (sb->game (game-initial g)))
+
+
+(@htdf click-new)
+(@signature Game -> Game)
+;; produce game after resetting with a different initial puzzle
+(check-random (click-new G5-ERR)
+              (sb->game (list-ref PUZZLE-BANK (random (length PUZZLE-BANK)))))
+(check-random (click-new G5-DONE-S)
+              (sb->game (list-ref PUZZLE-BANK (random (length PUZZLE-BANK)))))
+(check-random  ;??? these unit tests are not deterministic. Can I fix that? 
+ (click-new (sb->game BANK4-raw))
+ (sb->game (list-ref PUZZLE-BANK
+                     (local [(define list-length (length PUZZLE-BANK))
+                             (define n (random list-length))]
+                       (if (equal? (list-ref PUZZLE-BANK n) BANK4-raw)
+                           (modulo (add1 n) list-length)
+                           n)))))
+(check-random
+ (click-new EASY)  ;made from SB4-raw
+ (sb->game (list-ref PUZZLE-BANK
+                     (local [(define list-length (length PUZZLE-BANK))
+                             (define n (random list-length))]
+                       (if (equal? (prep-smartboard (list-ref PUZZLE-BANK n))
+                                   (game-initial EASY))
+                           (modulo (add1 n) list-length)
+                           n)))))
+
+;(define (click-new g) g)  ;stub
+
+(@template Game)
+(define (click-new g)
+  (local [(define list-length (length PUZZLE-BANK))
+          (define n (random list-length))]
+    (sb->game (list-ref PUZZLE-BANK
+                        (if (equal? (prep-smartboard (list-ref PUZZLE-BANK n))
+                                    (game-initial g))
+                            (modulo (add1 n) list-length)
+                            n)))))
 
 
 (@htdf click-choices)
@@ -2649,7 +2776,7 @@
 (@htdf xy->buttonindex)
 (@signature Integer Integer -> Natural or false)
 ;; produce index of the button at the location of x,y (buttons coordinates)
-;; ASSUME 0 <= x < BUTTONS-W and 0 <= y < BOARD-W ;!!!?
+;; ASSUME 0 <= x < BUTTONS-W and 0 <= y
 (check-expect (xy->buttonindex 0 0) 0)
 (check-expect (xy->buttonindex (sub1 BUTTONS-W) (sub1 BUTTON-H)) 0)
 (check-expect (xy->buttonindex (/ BUTTONS-W 2) (+ BUTTON-H -1)) 0)
@@ -2668,7 +2795,7 @@
   (local [(define spacing (+ BUTTON-H BUTTON-MD))
           (define index-zone (quotient y spacing))]
     (cond [(not (and (<= 0 x) (< x BUTTONS-W)
-                     (<= 0 y) (< y BOARD-W)))
+                     (<= 0 y)))
            (error "x or y is out of bounds for buttons coordinates")]
           [(and (< index-zone NUM-BUTTONS)
                 (< (remainder y spacing) BUTTON-H))
@@ -2728,8 +2855,13 @@
 
 (@template Integer try-catch)
 (define (xy->buttonid g x y)
-  (local [(define try (if (in-buttons? x y)
+  (local [(define num-buttons (length (game-buttons g)))
+          (define i (if (in-buttons? x y)
                           (xy->buttonindex (- x BUTTONS-LEF) (- y BUTTONS-TOP))
+                          false))
+          (define try (if (and (not (false? i))
+                               (< i num-buttons))
+                          i
                           false))]
     (if (not (false? try))
         (list-ref (game-buttons g) try)
@@ -2757,3 +2889,8 @@
       (xy->pos (- x BOARD-LEF) (- y BOARD-TOP))
       false))
 
+
+
+;; =================
+;; Start world...
+(main EASY)
