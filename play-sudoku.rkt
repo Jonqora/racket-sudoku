@@ -2617,9 +2617,9 @@
 (@htdf click-new)
 (@signature Game -> Game)
 ;; produce game after resetting with a different initial puzzle
-(check-random (click-new G5-ERR)
+(check-random (click-new (sb->game SB3-raw))
               (sb->game (list-ref PUZZLE-BANK (random (length PUZZLE-BANK)))))
-(check-random (click-new G5-DONE-S)
+(check-random (click-new (sb->game SB7-raw))  ;unsolveable
               (sb->game (list-ref PUZZLE-BANK (random (length PUZZLE-BANK)))))
 (check-random  ;??? these unit tests are not deterministic. Can I fix that? 
  (click-new (sb->game BANK4-raw))
