@@ -966,19 +966,17 @@
 ;; Constants:
 
 ;; --- Colors ---
-(define BASE-NUM-COLOR "black")
-(define USER-NUM-COLOR "navy")
+(define BASE-NUM-COLOR "dark gray")
+(define USER-NUM-COLOR "black")
 (define TINY-NUM-COLOR "sky blue")
 (define TINY-ALL-COLOR "dark grey")
-(define NOPE-NUM-COLOR "crimson")
-(define HINT-NUM-COLOR "forest green")
 
 (define SML-GRID-COLOR "gray")
 (define BIG-GRID-COLOR "dark gray")
 
 (define SQUARE-COLOR "white")
-(define SQ-COLOR-HINT "chartreuse")
-(define SQ-COLOR-UNDO "light blue")
+(define SQ-COLOR-HINT "pale green")
+(define SQ-COLOR-UNDO "gold")
 (define SQ-COLOR-ERROR "light coral")
 
 (define MTS-COLOR "cornflower blue")
@@ -1074,16 +1072,24 @@
 ;;    click    - button Color when pressed
 ;;    hover    - button Color when hover
 
+(define B-WRITE (make-btn "b-write" "Write"
+                          (λ (g) (click-write g))
+                          (λ (g) (string=? (game-mode g) WRITE))
+                          "DarkGray" "RoyalBlue" "CornflowerBlue"))
+(define B-ERASE (make-btn "b-erase" "Erase"
+                          (λ (g) (click-erase g))
+                          (λ (g) (string=? (game-mode g) ERASE))
+                          "DarkGray" "RoyalBlue" "CornflowerBlue"))
 (define B-UNDO (make-btn "b-undo" "Undo"
                          (λ (g) (click-undo g)) (λ (_) false)
-                         "Tomato" "OrangeRed" "LightCoral"))
+                         "Orange" "DarkOrange" "Gold"))
 (define B-HINT (make-btn "b-hint" "Hint?"
                          (λ (g) (click-hint g)) (λ (_) false)
-                         "Orange" "DarkOrange" "NavajoWhite"))
+                         "LimeGreen" "ForestGreen" "PaleGreen"))
 (define B-SOLVE (make-btn "b-solve" "Auto-Solve"
                           (λ (g) (click-solve g))
                           (λ (g) (string=? (game-mode g) SOLVE))
-                          "LimeGreen" "ForestGreen" "Chartreuse"))
+                          "LimeGreen" "ForestGreen" "PaleGreen"))
 (define B-SHOW-CH (make-btn "b-showch" "Show Choices"
                             (λ (g) (click-choices g))
                             (λ (g) (ops-showchoices (game-options g)))
@@ -1091,21 +1097,13 @@
 (define B-SHOW-ER (make-btn "b-shower" "Show Errors"
                             (λ (g) (click-errors g))
                             (λ (g) (ops-showerrors (game-options g)))
-                            "Tomato" "OrangeRed" "LightCoral"))
-(define B-WRITE (make-btn "b-write" "Write"
-                          (λ (g) (click-write g))
-                          (λ (g) (string=? (game-mode g) WRITE))
-                          "CornflowerBlue" "RoyalBlue" "LightSkyBlue"))
-(define B-ERASE (make-btn "b-erase" "Erase"
-                          (λ (g) (click-erase g))
-                          (λ (g) (string=? (game-mode g) ERASE))
-                          "Violet" "HotPink" "LightPink"))
+                            "DeepSkyBlue" "DodgerBlue" "SkyBlue"))
 (define B-RESET (make-btn "b-reset" "Reset"
                           (λ (g) (click-reset g)) (λ (_) false)
-                          "Violet" "HotPink" "LightPink"))
+                          "MediumOrchid" "DarkOrchid" "Violet"))
 (define B-NEW (make-btn "b-new" "New Game"
                         (λ (g) (click-new g)) (λ (_) false)
-                        "Violet" "HotPink" "LightPink"))
+                        "SlateGray" "LightSlateGray" "Gray"))
 
 (define LIST-BUTTONS (list B-WRITE B-ERASE B-UNDO B-HINT B-SOLVE
                            B-SHOW-CH B-SHOW-ER B-RESET B-NEW))
@@ -1497,9 +1495,7 @@
    (beside/align "top"
                  (local [(define board-img (overlay MTBOARD (render-board g)))]
                    (if (empty? (game-next g))
-                       (place-image (if (empty? (game-next g))
-                                        WIN-BANNER
-                                        empty-image)
+                       (place-image WIN-BANNER
                                     (/ (image-width board-img) 2)
                                     (/ (image-height board-img) 2)
                                     board-img)
@@ -1543,10 +1539,6 @@
                  [(in-buttons? x y)
                   (buttons-click updated-g (- x BUTTONS-LEF) (- y BUTTONS-TOP))]
                  [else updated-g])]
-          ;[(mouse=? me "move")
-          ; (cond [(in-board?   x y)
-          ;        (board-hover   updated-g (- x BOARD-LEF)   (- y BOARD-TOP))]
-          ;       [else updated-g])]  ;!!! do I need this?
           [else updated-g])))
 
 
@@ -1637,7 +1629,10 @@
                   (game-buttons g)  (game-mouse g)))]
     ;; Solveable with no errors - take next step to solve
     [else
-     (make-game (game-initial  g) (first (game-next g))
+     (make-game (game-initial  g) (first (game-next g))  ;!!! BUG HERE
+                ;first: expects a value that is a list and a value that
+                ;is not an empty, given #false
+                ;...did I fail to update (game-next g) properly somewhere?
                 (game-solution g) (cons (game-current g)
                                         (game-prev g))
                 (rest (game-next g)) (game-errors g)
@@ -1779,7 +1774,8 @@
           (define (get-displaycell sq p)
             (cond [(or (ops-showchoices (game-options g))
                        (string=? SOLVE (game-mode g))) "choices"]
-                  [(hover-pos? p) "all"]
+                  [(and (string=? WRITE (game-mode g))
+                        (hover-pos? p)) "all"]
                   [else "none"]))]
     
     (overlay MTBOARD
@@ -2544,7 +2540,7 @@
                       (if (and (empty? updated-errors)  ;update if new solveable
                                (not (false? (game-solution g))))
                           (solve-steps (first (game-prev g)))
-                          (game-next g))  ;false
+                          false)
                       updated-errors
                       (game-mode    g) (game-options g)
                       (game-buttons g) (game-mouse   g)))]))
