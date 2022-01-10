@@ -1014,6 +1014,7 @@
 
 (define TINY-TEXT-SIZE (floor (* 0.9 CELL-W)))
 (define SQUARE-TEXT-SIZE (floor (* 0.8 SQUARE-W)))
+(define WINNER-TEXT-SIZE (* 2 SQUARE-W))
 
 (define SML-LINE-SIZE 2)
 (define BIG-LINE-SIZE 4)
@@ -1042,6 +1043,11 @@
                                            TINY-NUM-COLOR)
                                      TINY-CELL))
                      ALL-VALS))
+(define WIN-BANNER
+  (overlay (text/font "Winner!" WINNER-TEXT-SIZE MTS-COLOR  ;"CornflowerBlue"
+                      "Arial" "default" "normal" "bold" false)
+           (rectangle (* 10 SQUARE-W) (* 4 SQUARE-W)  ;width > board on purpose
+                      "solid" (make-color 223 223 223 191))))
 
 
 ;; =================
@@ -1444,10 +1450,7 @@
 ;; render the current game window
 (check-expect
  (render EASY)
- (underlay/align/offset "left" "top"
-                        MTS
-                        BORDER-LR
-                        BORDER-TB
+ (underlay/align/offset "left" "top"MTS BORDER-LR BORDER-TB
                         (beside/align "top"
                                       (overlay MTBOARD
                                                (render-board EASY))
@@ -1455,28 +1458,54 @@
                                       (render-buttons EASY))))
 (check-expect
  (render HARD)
- (underlay/align/offset "left" "top"
-                        MTS
-                        BORDER-LR
-                        BORDER-TB
+ (underlay/align/offset "left" "top" MTS BORDER-LR BORDER-TB
                         (beside/align "top"
                                       (overlay MTBOARD
                                                (render-board HARD))
                                       (rectangle SQUARE-W 0 "solid" "white")
                                       (render-buttons HARD))))
+(check-expect
+ (render G5-DONE-S)  ;correctly solved
+ (underlay/align/offset
+  "left" "top" MTS BORDER-LR BORDER-TB
+  (beside/align "top"
+                (local [(define bd-img
+                          (overlay MTBOARD
+                                   (render-board G5-DONE-S)))]
+                  (place-image WIN-BANNER
+                               (/ (image-width bd-img) 2)
+                               (/ (image-height bd-img) 2)
+                               bd-img))
+                (rectangle SQUARE-W 0 "solid" "white")
+                (render-buttons G5-DONE-S))))
+(check-expect
+ (render (write-num G5-ERR 9 2))  ;filled but incorrect
+ (underlay/align/offset
+  "left" "top" MTS BORDER-LR BORDER-TB
+  (beside/align "top"
+                (overlay MTBOARD
+                         (render-board (write-num G5-ERR 9 2)))
+                (rectangle SQUARE-W 0 "solid" "white")
+                (render-buttons (write-num G5-ERR 9 2)))))
+
 ;(define (render g) empty-image)  ;stub
 
 (@template fn-composition)
 (define (render g)
-  (underlay/align/offset "left" "top"
-                         MTS
-                         BORDER-LR
-                         BORDER-TB
-                         (beside/align "top"
-                                       (overlay MTBOARD
-                                                (render-board g))
-                                       (rectangle SQUARE-W 0 "solid" "white")
-                                       (render-buttons g))))
+  (underlay/align/offset
+   "left" "top" MTS BORDER-LR BORDER-TB
+   (beside/align "top"
+                 (local [(define board-img (overlay MTBOARD (render-board g)))]
+                   (if (empty? (game-next g))
+                       (place-image (if (empty? (game-next g))
+                                        WIN-BANNER
+                                        empty-image)
+                                    (/ (image-width board-img) 2)
+                                    (/ (image-height board-img) 2)
+                                    board-img)
+                       board-img))
+                 (rectangle SQUARE-W 0 "solid" "white")
+                 (render-buttons g))))
 
 
 (@htdf handle-mouse)
@@ -2857,8 +2886,8 @@
 (define (xy->buttonid g x y)
   (local [(define num-buttons (length (game-buttons g)))
           (define i (if (in-buttons? x y)
-                          (xy->buttonindex (- x BUTTONS-LEF) (- y BUTTONS-TOP))
-                          false))
+                        (xy->buttonindex (- x BUTTONS-LEF) (- y BUTTONS-TOP))
+                        false))
           (define try (if (and (not (false? i))
                                (< i num-buttons))
                           i
