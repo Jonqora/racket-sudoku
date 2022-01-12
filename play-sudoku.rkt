@@ -1129,6 +1129,12 @@
         [(string=? "all" dc) (...)]))
 
 
+(@htdd UserSquare?)
+;; UserSquare? is Boolean
+;; INTERP. true if Square is user-fillable, false if initial puzzle holds Val
+(define (fn-for-usq usq) ... usq)
+
+
 (@htdd ButtonState)
 ;; ButtonState is one of: "none", "click", "hover"
 ;; INTERP. The interaction state of a UI button. "none" is normal state
