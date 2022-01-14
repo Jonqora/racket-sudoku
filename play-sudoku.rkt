@@ -1132,7 +1132,7 @@
 (@htdd UserSquare?)
 ;; UserSquare? is Boolean
 ;; INTERP. true if Square is user-fillable, false if initial puzzle holds Val
-(define (fn-for-usq usq) ... usq)
+(define (fn-for-u? u?) (... u?))
 
 
 (@htdd ButtonState)
@@ -1859,7 +1859,7 @@
 
 
 (@htdf render-square)
-(@signature Square Boolean SqHighlight DisplayCell -> Image)
+(@signature Square UserSquare? SqHighlight DisplayCell -> Image)
 ;; produce image of a grid square from info on user/base, highlight, and display
 (check-expect (render-square 5            false "error" "none")
               (overlay (text (number->string 5)
@@ -1881,28 +1881,29 @@
               (overlay (render-tiny ALL-VALS "all")
                        (square SQUARE-W "solid" SQUARE-COLOR)))
 
-;(define (render-square sq user? sh dc) empty-image)  ;stub
+;(define (render-square sq u? sh dc) empty-image)  ;stub
 
 (@template Square)
 
-(define (render-square sq user? sh dc)
+(define (render-square sq u? sh dc)
   (local [(define square-background
             (square SQUARE-W "solid"
                     (cond [(string=? "none" sh) SQUARE-COLOR]
                           [(string=? "hint" sh) SQ-COLOR-HINT]
                           [(string=? "undo" sh) SQ-COLOR-UNDO]
-                          [(string=? "error" sh) SQ-COLOR-ERROR])))]
+                          [(string=? "error" sh) SQ-COLOR-ERROR])))
+          (define (render-open sq)
+            (overlay (render-tiny sq dc)
+                     square-background))]
+    
     (cond [(number? sq)
-           (overlay (text (number->string sq)
-                          SQUARE-TEXT-SIZE (if user?
-                                               USER-NUM-COLOR
-                                               BASE-NUM-COLOR))
+           (overlay (text (number->string sq) SQUARE-TEXT-SIZE
+                          (if u?
+                              USER-NUM-COLOR
+                              BASE-NUM-COLOR))
                     square-background)]
-          [(empty? sq)
-           square-background]
-          [else
-           (overlay (render-tiny sq dc)
-                    square-background)])))
+          [(empty? sq) (render-open sq)]
+          [else        (render-open sq)])))
 
 
 
