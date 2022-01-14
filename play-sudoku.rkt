@@ -4,7 +4,7 @@
 (require racket/list) ;gets list-ref, take and drop
 (require spd/tags)
 
-;; PLAYABLE SUDOKU GAME by Ellen Lloyd
+;; SMOOTH SUDOKU game by Ellen Lloyd
 ;;
 ;; Based on:
 ;; Constrained Search Tree Sudoku Solver solution design
@@ -1431,7 +1431,7 @@
     (on-tick   tock)          ; Game -> Game
     (to-draw   render)        ; Game -> Image
     (on-mouse  handle-mouse)  ; Game Integer Integer MouseEvent -> Game
-    (name "Super Sudoku | by Ellen Lloyd")))
+    (name "Smooth Sudoku | by Ellen Lloyd")))
 
 
 (@htdf tock)
