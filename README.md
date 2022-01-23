@@ -1,12 +1,8 @@
 # Smooth Sudoku
-Playable sudoku client written as a [HtDW](https://world.cs.brown.edu/) world program in Racket ISL.
-
---------------------------------------------------------------------------------
-
 ## About
 I developed this program as a culmination of all design patterns learned after 
-completing a course in Systematic Program Design at UBC. That curriculum (CPSC 
-110) is based on [How to Design Programs](http://htdp.org/).
+completing a course in **Systematic Program Design** at UBC. That curriculum 
+(CPSC 110) is based on [How to Design Programs](http://htdp.org/).
 
 1. The earliest roots of the sudoku solving algorithm used in this code were 
 from a backtracking search problem taught in class instructional materials. The 
@@ -16,11 +12,16 @@ original problem used a rudimentary brute-force search tree.
 algorithm using constraint sets. Redesigning the data types and functions this 
 way allowed the new algorithm to become much more efficient. 
 
-3. For this current project after term ended, I designed and built a fully 
-playable sudoku game GUI that employs multiple variations on the constraint 
-set solver algorithm. My full game includes several features that make use of 
-those constraint sets (e.g. autosolve mode, hint system, error 
-tracking, option display...)
+3. For this current project after term ended, I designed and built a full
+sudoku game with GUI that employs multiple variations on the constraint 
+set algorithm. My game includes several features that make use of those 
+constraint sets (e.g. autosolve mode, hint system, error tracking, and 
+show choices).
+
+My approach to this project used top-down systematic design and thorough 
+**test-driven development** at every step. The code is written in racket's 
+_Intermediate Student_ language using the [HtDW](https://world.cs.brown.edu/) 
+framework for building interactive programs.
 
 ## Features
 
