@@ -54,7 +54,7 @@ _Smooth Sudoku's_ features and GUI are designed for a smooth and streamlined use
 - DrRacket 8.1+
 - Language: Intermediate Student with lambda
 
-_**HOW TO INSTALL:**_ Install the latest version of [DrRacket](https://racket-lang.org/). Download and open the [`play-sudoku.rkt`](/play-sudoku.rkt) source file in DrRacket, then run the program using the DrRacket IDE.
+_**HOW TO INSTALL:**_ Install the latest version of [DrRacket](https://racket-lang.org/). Download and open the [play-sudoku.rkt](/play-sudoku.rkt) source file in DrRacket, then run the program using the DrRacket IDE.
 
 #### To run .exe release file:
 - Windows 10+
