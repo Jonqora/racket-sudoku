@@ -43,7 +43,7 @@ _Smooth Sudoku's_ features and GUI are designed for a smooth and streamlined use
 <img src="promo/image-hint-choices-mouse.png" alt="Smooth Sudoku: hints and show choices" title="Hint/Show Choices" width="500"/>
 
 - For a step-by-step speedthrough that removes all errors and adds missing values to a puzzle, click *Auto-Solve*.
-- Players can reset a puzzle to its original state or start a new puzzle via. options in the bottom-left.
+- Players can reset a puzzle to its original state or start a new puzzle via. options in the bottom right.
 
 <img src="promo/image-winner-mouse.png" alt="Smooth Sudoku: autosolve and win screen" title="Auto-Solve" width="500"/>
 
