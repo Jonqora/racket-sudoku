@@ -1,5 +1,5 @@
 # Smooth Sudoku
-Playable sudoku client written as a [HtDW](https://world.cs.brown.edu/) world program in Racket ISL
+Playable sudoku client written as a [HtDW](https://world.cs.brown.edu/) world program in Racket ISL.
 
 --------------------------------------------------------------------------------
 
@@ -24,27 +24,27 @@ tracking, option display...)
 
 ## Features
 
-_Smooth Sudoku's_ features and GUI are designed for a smooth and streamlined user experience. All input is done using the mouse.
+_Smooth Sudoku's_ features and GUI are designed for a smooth and streamlined user experience. All input is through the mouse.
 
 - In standard mode, hovering over any empty square in _Write_ mode will reveal clickable options to fill.
 - Switching to _Erase_ mode in the top right allows to remove user-filled numbers with a click. 
 
-<img src="/promo/image-new-hover-mouse.png" alt="Smooth Sudoku interface: new game and hover-to-play" title="New game" width="500"/>
+<img src="promo/image-new-hover-mouse.png" alt="Smooth Sudoku: new game and hover-to-play" title="New Game" width="500"/>
 
 - Optional _Show Errors_ feature automatically highlights incorrect number placements, softening game difficulty.
 - Convenient _Undo_ feature (with yellow highlight on mouse hover) allows quick backtracking on previous moves.
 
-<img src="/promo/image-errors-undo-mouse.png" alt="Smooth Sudoku features: show errors and undo" title="Undo/Show Errors" width="500"/>
+<img src="promo/image-errors-undo-mouse.png" alt="Smooth Sudoku: show errors and undo" title="Undo/Show Errors" width="500"/>
 
 - Optional _Show Choices_ feature provides another way to soften difficulty by showing and allowing only valid number placements.
 - The _Hint_ hover feature highlights one most recent error OR a square with fewest valid options. Clicking applies the hint.
 
-<img src="/promo/image-hint-choices-mouse.png" alt="Smooth Sudoku interface: hints and show choices" title="Hint/Show Choices" width="500"/>
+<img src="promo/image-hint-choices-mouse.png" alt="Smooth Sudoku: hints and show choices" title="Hint/Show Choices" width="500"/>
 
 - For a step-by-step speedthrough that removes all errors and adds missing values to a puzzle, click *Auto-Solve*.
 - Players can reset a puzzle to its original state or start a new puzzle via. options in the bottom-left.
 
-<img src="/promo/image-winner-mouse.png" alt="Smooth Sudoku interface: autosolve and win screen" title="Autosolve" width="500"/>
+<img src="promo/image-winner-mouse.png" alt="Smooth Sudoku: autosolve and win screen" title="Auto-Solve" width="500"/>
 
 
 ## User Information
@@ -53,7 +53,7 @@ _Smooth Sudoku's_ features and GUI are designed for a smooth and streamlined use
 - DrRacket 8.1+;
 - Language: Intermediate Student with lambda
 
-_**HOW TO INSTALL:**_ Install the latest version of [DrRacket.](https://racket-lang.org/). Download and open the [`play-sudoku.rkt`](/play-sudoku.rkt) source file in DrRacket, then run the program using the DrRacket IDE.
+_**HOW TO INSTALL:**_ Install the latest version of [DrRacket](https://racket-lang.org/). Download and open the [`play-sudoku.rkt`](/play-sudoku.rkt) source file in DrRacket, then run the program using the DrRacket IDE.
 
 #### To run .exe release file:
 - Windows 10+
