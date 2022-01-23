@@ -19,9 +19,9 @@ constraint sets (e.g. autosolve mode, hint system, error tracking, and
 show choices).
 
 My approach to this project used top-down systematic design and thorough 
-**test-driven development** at every step. The code is written in racket's 
-_Intermediate Student_ language using the [HtDW](https://world.cs.brown.edu/) 
-framework for building interactive programs.
+**test-driven development** at every step. The code is entirely written in 
+Racket's _Intermediate Student_, a pure functional language. It also uses the
+[HtDW](https://world.cs.brown.edu/) framework for interactive programs.
 
 ## Features
 
