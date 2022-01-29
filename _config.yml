@@ -1,7 +1,7 @@
 title: racket-sudoku
 logo: /promo/smooth-sudoku-preview.png
-description: Playable sudoku client written as a HtDW world program in Racket ISL
-image: /promo/smooth-sudoku-og-image.png
+description: Playable sudoku client written as a pure-functional GUI application in Racket ISL
+og_image: /promo/smooth-sudoku-og-image.png
 show_downloads: false
 google_analytics:
 theme: jekyll-theme-minimal
