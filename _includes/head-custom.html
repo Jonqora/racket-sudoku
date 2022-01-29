@@ -1,17 +1,11 @@
 <!-- start custom head snippets, customize with your own _includes/head-custom.html file -->
 
 <!-- Set site favicon here -->
-{% if site.favicon %}
-  <link rel="shortcut icon" type="image/x-icon" href="{{ '/favicon.ico' | relative_url }}">
-{% endif %}
+<link rel="shortcut icon" type="image/x-icon" href="https://ellenlloyd.ca/images/favicon.ico">
+<link rel="shortcut icon" type="image/png" href="https://ellenlloyd.ca/images/favicon-32x32.png">
 
 <!-- Provide open graph image preview -->
-{% if page.image %}
-  <meta property="og:image" content="{{page.image}}" />
-  <meta name="twitter:image" content="{{page.image}}" />
-{% else %}
-  <meta property="og:image" content="{{ '/promo/smooth-sudoku-og-image.png' | relative_url }}" />
-  <meta name="twitter:image" content="{{ '/promo/smooth-sudoku-og-image.png' | relative_url }}" />
-{% endif %}
+<meta property="og:image" content="https://ellenlloyd.ca/racket-sudoku/promo/og.png" />
+<meta name="twitter:image" content="https://ellenlloyd.ca/racket-sudoku/promo/og.png" />
   
 <!-- end custom head snippets -->
