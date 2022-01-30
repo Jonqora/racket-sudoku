@@ -1,7 +1,6 @@
 #lang htdp/isl+
 
 (require racket/list) ;gets list-ref, take and drop
-(require spd/tags)
 
 ;; SMOOTH SUDOKU game by Ellen Lloyd
 ;;
@@ -22,10 +21,10 @@
 ;; =================
 ;; Data definitions:
 
-(@htdd Val)
+;; (@htdd Val)
 ;; Val is Natural[1, 9]
 
-(@htdd Board)
+;; (@htdd Board)
 ;; Board is (listof Val|false)   that is 81 elements long
 ;; interp.
 ;;  Visually a board is a 9x9 array of squares, where each square
@@ -34,7 +33,7 @@
 ;;  another in a linear fashion. (See interp. of Pos below for how
 ;;  we convert back and forth between (r, c) and position in a board.)
 
-(@htdd Pos)
+;; (@htdd Pos)
 ;; Pos is Natural[0, 80]
 ;; interp.
 ;;  the position of a square on the board, for a given p, then
@@ -44,7 +43,7 @@
 ;; Convert 0-based row and column to Pos
 (define (r-c->pos r c) (+ (* r 9) c))  ;helpful for writing tests
 
-(@htdd Unit)
+;; (@htdd Unit)
 ;; Unit is (listof Pos) of length 9
 ;; interp. 
 ;;  The position of every square in a unit. There are
@@ -53,7 +52,7 @@
 ;; -----------------
 ;; NEW Data definitions:
 
-(@htdd Square)
+;; (@htdd Square)
 ;; Square is one of: Val or (listof Val)
 ;; If Val, represents a square with a filled-in number on the board
 ;; If (listof Val), represents possible Val that could be placed in this square
@@ -62,7 +61,7 @@
 (define S3 empty)  ;no valid placements
 (define S4 (list 2 5 6 9))  ;4 possible placements
 
-(@htdd SmartBoard)
+;; (@htdd SmartBoard)
 ;; SmartBoard is (listof Square) that is 81 elements long.
 ;; Interp. SmartBoard is just like Board but with extra information stored:
 ;; each unfilled "false" square is instead represented as a (listof Val) Square
@@ -208,15 +207,15 @@
 (define E empty)     ;E stands for empty (unsolveable Square in SmartBoard)
 (define A ALL-VALS)  ;A stands for all (unfilled Square with all Val possible)
 
-(@htdf ex)
-(@signature (listof Val) -> (listof Val))
+;; (@htdf ex)
+;; (@signature (listof Val) -> (listof Val))
 ;; produce set difference of ALL-VALS and provided list of Val
 (check-expect (ex (list)) ALL-VALS)
 (check-expect (ex (list 2)) N2)
 (check-expect (ex (list 8)) N8)
 (check-expect (ex (list 4 5 6)) (list 1 2 3 7 8 9))
 
-(@template use-abstract-fn)
+;; ;; (@template use-abstract-fn)
 (define (ex lov)
   (filter (lambda (v) (not (member v lov)))
           ALL-VALS))
@@ -440,18 +439,18 @@
 ;; =================
 ;; Functions:
 
-(@htdf solve)
-(@signature SmartBoard -> Board or false)
+;; (@htdf solve)
+;; (@signature SmartBoard -> Board or false)
 ;; produces solved version of board using constraint sets, false if unsolvable
 ;; ASSUME: sb is valid and constrained SmartBoard
 (check-expect (solve (prep-smartboard (bd->smartboard BD4))) BD4s)
 (check-expect (solve (prep-smartboard (bd->smartboard BD5))) BD5s)
 (check-expect (solve (prep-smartboard (bd->smartboard BD7))) false)
 
-(@template encapsulated
-           genrec arb-tree
-           try-catch
-           fn-composition)
+;; (@template encapsulated
+;;            genrec arb-tree
+;;            try-catch
+;;            fn-composition)
 
 (define (solve sb)
   (local [;;(@signature SmartBoard -> Smartboard or false)
@@ -473,8 +472,8 @@
     (fn-for-sb sb)))
 
 
-(@htdf solve-steps)
-(@signature SmartBoard -> (listof SmartBoard) or false)
+;; (@htdf solve-steps)
+;; (@signature SmartBoard -> (listof SmartBoard) or false)
 ;; produces list all next step boards towards solution, false if unsolvable
 ;; ASSUME: sb is a valid and constrained SmartBoard
 (check-expect (solve-steps (prep-smartboard (list 5 3 9 A A A 8 7 2
@@ -533,10 +532,10 @@
                                            4 5 8 6 7 9 2 3 1))))
 (check-expect (solve-steps (prep-smartboard (bd->smartboard BD7))) false)
 
-(@template encapsulated
-           genrec arb-tree
-           try-catch
-           fn-composition)
+;; (@template encapsulated
+;;            genrec arb-tree
+;;            try-catch
+;;            fn-composition)
 
 (define (solve-steps sb)
   (local [;;(@signature SmartBoard -> (listof Smartboard) or false)
@@ -569,20 +568,20 @@
 ;; -----------------
 ;; Helper Functions:
 
-(@htdf is-solved?)
-(@signature SmartBoard -> Boolean)
+;; (@htdf is-solved?)
+;; (@signature SmartBoard -> Boolean)
 ;; produce true if SmartBoard has only Val, not (listof Val)
 ;; ASSUME the given board is valid
 (check-expect (is-solved? SB2) false)
 (check-expect (is-solved? SB4-raw) false)
 (check-expect (is-solved? SB4s) true)
 
-(@template use-abstract-fn)
+;; (@template use-abstract-fn)
 (define (is-solved? sb) (andmap integer? sb))
 
 
-(@htdf not-solvable?)
-(@signature SmartBoard -> Boolean)
+;; (@htdf not-solvable?)
+;; (@signature SmartBoard -> Boolean)
 ;; produce true if any Square is an empty list (no valid options), else false
 ;; ASSUME: Combination of the non-list Val Squares in SmartBoard is valid
 (check-expect (not-solvable? (cons (list 2) (rest SB4s))) false)
@@ -601,18 +600,18 @@
                        E (ex (l 7 8 9))      9           N9 N9 N9 N9 N9 N9)))
               true)
 
-(@template use-abstract-fn)
+;; (@template use-abstract-fn)
 (define (not-solvable? sb) (ormap empty? sb))
 
 
-(@htdf bd->smartboard)
-(@signature Board -> SmartBoard)
+;; (@htdf bd->smartboard)
+;; (@signature Board -> SmartBoard)
 ;; produce an equivalent SmartBoard by changing each false in Board to ALL-VALS
 (check-expect (bd->smartboard BD1) SB1)
 (check-expect (bd->smartboard BD2) SB2-raw)
 (check-expect (bd->smartboard BD4) SB4-raw)
 
-(@template use-abstract-fn)
+;; (@template use-abstract-fn)
 (define (bd->smartboard bd)
   (map (lambda (v) (if (false? v)
                        ALL-VALS
@@ -620,8 +619,8 @@
        bd))
 
 
-(@htdf prep-smartboard)
-(@signature SmartBoard -> SmartBoard)
+;; (@htdf prep-smartboard)
+;; (@signature SmartBoard -> SmartBoard)
 ;; produce SmartBoard with all non-legal Val in (listof Val) Squares removed
 (check-expect (prep-smartboard SB2-raw) SB2)
 (check-expect (prep-smartboard SB3-raw) SB3)
@@ -629,7 +628,7 @@
 (check-expect (prep-smartboard SB2) SB2)
 (check-expect (prep-smartboard SB5s) SB5s)
 
-(@template use-abstract-fn)
+;; (@template use-abstract-fn)
 (define (prep-smartboard sb)
   (foldr (lambda (p sb)
            (local [(define s (list-ref sb p))]
@@ -640,8 +639,8 @@
          ALL-POS))
 
 
-(@htdf eliminate-options)
-(@signature Val Pos SmartBoard -> SmartBoard)
+;; (@htdf eliminate-options)
+;; (@signature Val Pos SmartBoard -> SmartBoard)
 ;; produce SmartBoard with Val removed from all (listof Val) NEIGHBORS of Pos
 (check-expect (eliminate-options 2 10 SB1)
               (list N2 N2 N2 A  A  A  A  A  A
@@ -665,7 +664,7 @@
                     9 N9 N9 N9 N9 N9 N9 N9 N9))
 ;(define (eliminate-options val pos sb) sb)  ;stub
 
-(@template use-abstract-fn)
+;; (@template use-abstract-fn)
 (define (eliminate-options val p0 sb)
   (local [(define this-neighbors (list-ref NEIGHBORS p0))
           (define (remove-val lov)
@@ -681,8 +680,8 @@
          ALL-POS)))
 
 
-(@htdf constrain-square)
-(@signature SmartBoard Pos -> SmartBoard)
+;; (@htdf constrain-square)
+;; (@signature SmartBoard Pos -> SmartBoard)
 ;; produce SmartBoard with unallowed options removed from (listof Val) at Pos
 ;; ASSUME: Pos contains a (listof Val), not a Val
 (check-expect (constrain-square (append (list 5 (list 3) (list 9))
@@ -698,7 +697,7 @@
 
 ;(define (constrain-square sb p0) sb)  ;stub
 
-(@template use-abstract-fn fn-composition)
+;; (@template use-abstract-fn fn-composition)
 (define (constrain-square sb p0)
   (local [(define not-allowed
             (filter number?
@@ -713,8 +712,8 @@
 
 
 
-(@htdf restore-options)
-(@signature Val Pos SmartBoard -> SmartBoard)
+;; (@htdf restore-options)
+;; (@signature Val Pos SmartBoard -> SmartBoard)
 ;; produce SmartBoard with Val added if missing to (listof Val) NEIGHBORS of Pos
 (check-expect (restore-options 2 10
                                (list N2 N2 N2 A  A  A  A  A  A
@@ -756,7 +755,7 @@
                     A A  A  A  A  A  A  A  A))
 ;(define (restore-options val pos sb) sb)  ;stub
 
-(@template use-abstract-fn fn-composition)
+;; (@template use-abstract-fn fn-composition)
 (define (restore-options val p0 sb)
   (local [(define this-neighbors (list-ref NEIGHBORS p0))
           ;; produce true if val is allowable at given pos
@@ -778,8 +777,8 @@
          ALL-POS)))
 
 
-(@htdf next-smartboards)
-(@signature SmartBoard -> (listof SmartBoard))
+;; (@htdf next-smartboards)
+;; (@signature SmartBoard -> (listof SmartBoard))
 ;; produce next boards by filling most constrained space with each Val option
 ;; ASSUME: there is at least one unfilled Square such that (list? sq) is true
 ;; ASSUME: no Squares are impossible i.e. hold an empty (listof Val)
@@ -825,13 +824,13 @@
                                                    (list 9)
                                                    (drop SB2 (add1 9))))))
 
-(@template fn-composition)
+;; (@template fn-composition)
 (define (next-smartboards sb)
   (fill-square-w-options sb (most-constrained-pos sb)))
 
 
-(@htdf most-constrained-pos)
-(@signature SmartBoard -> Pos)
+;; (@htdf most-constrained-pos)
+;; (@signature SmartBoard -> Pos)
 ;; produce Pos of first Square among all unfilled ones with fewest Val options
 ;; ASSUME: SmartBoard has at least one unfilled Square, no impossible Squares
 (check-expect (most-constrained-pos SB1) 0)
@@ -850,7 +849,7 @@
                        (l 9) (ex (l 7 8))   (ex (l 7 8))   A  A  A  A  A  A)))
               72)
 
-(@template SmartBoard accumulator)
+;; (@template SmartBoard accumulator)
 (define (most-constrained-pos sb)
   ;; min is Number       ; number of Val options in most constrained Square
   ;; min-p is Pos|false  ; position of 1st Square with min Val options if found
@@ -869,8 +868,8 @@
     (fn-for-sb sb +inf.0 false 0)))
 
 
-(@htdf fill-square-w-options)
-(@signature SmartBoard Pos -> (listof SmartBoard))
+;; (@htdf fill-square-w-options)
+;; (@signature SmartBoard Pos -> (listof SmartBoard))
 ;; produce SmartBoards by filling Square with Vals and revising neighbor options
 ;; ASSUME Pos corresponds to an unfilled, non-impossible Square of SmartBoard
 (check-expect
@@ -917,15 +916,15 @@
                                                    (drop SB2 (add1 9))))))
 ;(define (fill-square-w-options sb p0) empty)  ;stub
 
-(@template use-abstract-fn)
+;; (@template use-abstract-fn)
 (define (fill-square-w-options sb p0)
   (local [(define option-list (list-ref sb p0))]
     (map (λ (v) (fill-val-and-clean sb v p0))
          option-list)))
 
 
-(@htdf fill-val-and-clean)
-(@signature SmartBoard Val Pos -> SmartBoard)
+;; (@htdf fill-val-and-clean)
+;; (@signature SmartBoard Val Pos -> SmartBoard)
 ;; produce SmartBoard with Val inserted at Pos and constraint sets updated
 (check-expect (fill-val-and-clean SB2 4 9)
               (eliminate-options 4 9 (append (take SB2 9)
@@ -942,7 +941,7 @@
 
 ;(define (fill-val-and-clean sb v p) SB5s)  ;stub
 
-(@template fn-composition)
+;; (@template fn-composition)
 (define (fill-val-and-clean sb v p)
   (eliminate-options v p
                      (append (take sb p)
@@ -959,7 +958,7 @@
 
 ;; Playable Sudoku
 
-(@htdw Game)
+;; (@htdw Game)
 
 ;; =================
 ;; Constants:
@@ -1051,14 +1050,14 @@
 ;; Data definitions:
 
 
-(@htdd ButtonID)
+;; (@htdd ButtonID)
 ;; ButtonID is String
 ;; INTERP. Unique identifer strings for buttons
 (define BID0 "b-undo")
 (define BID1 "b-hint")
 
 
-(@htdd Button)
+;; (@htdd Button)
 (define-struct btn [id label on/click pressed? color click hover])
 ;; Button is (make-btn ButtonID String (Game -> Game)
 ;;                        (Game -> Boolean) Color Color Color)
@@ -1109,7 +1108,7 @@
 (define NUM-BUTTONS (length LIST-BUTTONS))
 
 
-(@htdd SqHighlight)
+;; (@htdd SqHighlight)
 ;; SqHighlight is one of: "none", "hint", "undo", "error"
 ;; INTERP. The highlight mode for rendering a board square. "none" is normal
 (define (fn-for-sqhighlight sh)
@@ -1119,7 +1118,7 @@
         [(string=? "error" sh) (...)]))
 
 
-(@htdd DisplayCell)
+;; (@htdd DisplayCell)
 ;; DisplayCell is one of: "none", "choices", "all"
 ;; INTERP. The display mode for rendering tiny cell nums. "none" is empty
 (define (fn-for-displaycell dc)
@@ -1128,13 +1127,13 @@
         [(string=? "all" dc) (...)]))
 
 
-(@htdd UserSquare?)
+;; (@htdd UserSquare?)
 ;; UserSquare? is Boolean
 ;; INTERP. true if Square is user-fillable, false if initial puzzle holds Val
 (define (fn-for-u? u?) (... u?))
 
 
-(@htdd ButtonState)
+;; (@htdd ButtonState)
 ;; ButtonState is one of: "none", "click", "hover"
 ;; INTERP. The interaction state of a UI button. "none" is normal state
 (define (fn-for-buttonstate bs)
@@ -1143,7 +1142,7 @@
         [(string=? "hover" bs) (...)]))
 
 
-(@htdd ButtonsData)
+;; (@htdd ButtonsData)
 ;; ButtonsData is (listof ButtonID)
 ;; Note: is an ordered list (rendered top to bottom) of all buttons in game
 (define BTNS0 (list "b-undo" "b-hint" "b-showch" "b-write"))
@@ -1154,7 +1153,7 @@
   (list "b-solve" "b-hint" "b-undo" "b-showch" "b-shower" "b-write" "b-erase"))
 
 
-(@htdd Mode)
+;; (@htdd Mode)
 ;; Mode is one of:
 ;;   "write"
 ;;   "erase"
@@ -1173,7 +1172,7 @@
         [(string=? m SOLVE)  (...)]))
 
 
-(@htdd Options)
+;; (@htdd Options)
 (define-struct ops [showchoices showerrors])
 ;; Options is (make-ops Boolean Boolean)
 ;; INTERP. The state of current selections for game options
@@ -1189,7 +1188,7 @@
        (ops-showerrors o)))
 
 
-(@htdd Mouse)
+;; (@htdd Mouse)
 (define-struct ms [x y])
 ;; Mouse is (make-ms Integer Integer)
 ;; INTERP. Current x and y coordinates of the mouse. Used for hover position.
@@ -1216,7 +1215,7 @@
 ;; =================
 ;; WorldState Data Definition:
 
-(@htdd Game)
+;; (@htdd Game)
 (define-struct game [initial current solution
                              prev next
                              errors mode options buttons mouse])
@@ -1415,15 +1414,15 @@
 ;; =================
 ;; Functions:
 
-(@htdf main)
-(@signature Game -> Game)
+;; (@htdf main)
+;; (@signature Game -> Game)
 ;; start the world with (main EASY)
 ;;                      (main MED)
 ;;                      (main HARD) or
 ;;                      (main (bd->game <Board>))
 ;; 
 
-(@template htdw-main)
+;; (@template htdw-main)
 
 (define (main g)
   (big-bang g                  ; Game
@@ -1436,23 +1435,23 @@
     [name "Smooth Sudoku | by Ellen Lloyd"]))
 
 
-(@htdf tock)
-(@signature Game -> Game)
+;; (@htdf tock)
+;; (@signature Game -> Game)
 ;; produce the next sudoku board during automatic solving 
 (check-expect (tock EASY) EASY)
 (check-expect (tock G5-ERR) (solve-step G5-ERR))
 
 ;(define (tock g) g)  ;stub
 
-(@template Game)
+;; (@template Game)
 (define (tock g)
   (cond [(string=? (game-mode g) SOLVE)
          (solve-step g)]
         [else g]))
 
 
-(@htdf render)
-(@signature Game -> Image)
+;; (@htdf render)
+;; (@signature Game -> Image)
 ;; render the current game window
 (check-expect
  (render EASY)
@@ -1496,7 +1495,7 @@
 
 ;(define (render g) empty-image)  ;stub
 
-(@template fn-composition)
+;; (@template fn-composition)
 (define (render g)
   (underlay/align/offset
    "left" "top" MTS BORDER-LR BORDER-TB
@@ -1512,8 +1511,8 @@
                  (render-buttons g))))
 
 
-(@htdf handle-mouse)
-(@signature Game Integer Integer MouseEvent -> Game)
+;; (@htdf handle-mouse)
+;; (@signature Game Integer Integer MouseEvent -> Game)
 ;; update game state based on mouse input to board or buttons
 (check-expect
  (handle-mouse EASY (+ 1 BORDER-LR) (+ 2 BORDER-TB) "button-down")
@@ -1538,7 +1537,7 @@
 
 ;(define (handle-mouse g x y me) g)  ;stub
 
-(@template MouseEvent)
+;; (@template MouseEvent)
 (define (handle-mouse g x y me)
   (local [(define updated-g (mouse-xy x y g))]
     (cond [(mouse=? me "button-down")
@@ -1550,8 +1549,8 @@
           [else updated-g])))
 
 
-(@htdf game-valid?)
-(@signature Game -> Boolean)
+;; (@htdf game-valid?)
+;; (@signature Game -> Boolean)
 ;; produce false if game state violates assumptions or design constraints
 (check-expect (game-valid? MTG) true)
 (check-expect (game-valid? EASY) true)
@@ -1641,7 +1640,7 @@
 
 ;(define (game-valid? g) true)  ;stub
 
-(@template Game)
+;; (@template Game)
 
 (define (game-valid? g0)
   (local [(define INITIAL-SOLVABLE?
@@ -1692,8 +1691,8 @@
         false
         true)))
 
-(@htdf placements-valid?)
-(@signature SmartBoard -> Boolean)
+;; (@htdf placements-valid?)
+;; (@signature SmartBoard -> Boolean)
 ;; produce false if any Unit on the board contains duplicate values, else true
 ;; ASSUME the given board is valid, so if full is therefore solved
 (check-expect (placements-valid? SB5s) true)
@@ -1726,7 +1725,7 @@
                                        A A A A A A A A A
                                        A A A 6 A A A A 6)) false)
 
-(@template use-abstract-fn fn-composition)
+;; (@template use-abstract-fn fn-composition)
 
 (define (placements-valid? sb)
   (local [;;(@signature (listOf Pos) -> Boolean)
@@ -1752,24 +1751,24 @@
 
 ;; -----Helper Functions-----
 
-(@htdf bd->game)
-(@signature Board -> Game)
+;; (@htdf bd->game)
+;; (@signature Board -> Game)
 ;; produce the starting state of a playable Sudoku game from a given Board
 (check-expect (bd->game BD4) EASY)
 (check-expect (bd->game BD5) HARD)
 
-(@template fn-composition)
+;; (@template fn-composition)
 (define (bd->game bd)
   (sb->game (bd->smartboard bd)))
 
 
-(@htdf sb->game)
-(@signature Board -> Game)
+;; (@htdf sb->game)
+;; (@signature Board -> Game)
 ;; produce the starting state of a playable Sudoku game from a SmartBoard
 (check-expect (sb->game SB4-raw) EASY)
 (check-expect (sb->game SB5-raw) HARD)
 
-(@template fn-composition)
+;; (@template fn-composition)
 (define (sb->game sb0)
   (local [(define sb (prep-smartboard sb0))
           (define valid-board? (placements-valid? sb))]
@@ -1789,8 +1788,8 @@
                DEFAULT-MOUSE)))  ;mouse
 
 
-(@htdf solve-step)
-(@signature Game -> Game)
+;; (@htdf solve-step)
+;; (@signature Game -> Game)
 ;; produce updated game after taking a step towards known solution if any
 (check-expect (solve-step G5-ERR) G5-LAST2)  ;undo error(s)
 (check-expect (solve-step G5-LAST2) G5-LAST1)  ;penultimate placement
@@ -1813,7 +1812,7 @@
 
 ;(define (solve-step g) g)  ;stub
 
-(@template Game)
+;; (@template Game)
 (define (solve-step g)
   (cond
     ;; Unsolvable (or already solved) - switch from SOLVE mode to WRITE
@@ -1852,8 +1851,8 @@
                 (game-buttons g)     (game-mouse g))]))
 
 
-(@htdf erase-square)
-(@signature SmartBoard Pos -> Smartboard)
+;; (@htdf erase-square)
+;; (@signature SmartBoard Pos -> Smartboard)
 ;; produce a SmartBoard with value at given Pos replaced with constraint set
 (check-expect (erase-square (make-list 81 A) 2) (make-list 81 A))
 (check-expect (erase-square (cons 5 (make-list 80 A))
@@ -1870,7 +1869,7 @@
 
 ;(define (erase-square sb p) sb)  ;stub
 
-(@template SmartBoard fn-composition)
+;; (@template SmartBoard fn-composition)
 (define (erase-square sb p)
   (local [(define val (list-ref sb p))]
     (restore-options val p
@@ -1881,8 +1880,8 @@
 
 
 
-(@htdf render-board)
-(@signature Game -> Image)
+;; (@htdf render-board)
+;; (@signature Game -> Image)
 ;; produce a rendering of the current state of the sudoku grid
 (check-expect (render-board MTG)
               (overlay MTBOARD
@@ -1909,7 +1908,7 @@
 
 ;(define (render-board g) empty-image)  ;stub
 
-(@template fn-composition encapsulated accumulator)
+;; (@template fn-composition encapsulated accumulator)
 (define (render-board g)
   (local [(define board (game-current g))
           (define x (ms-x (game-mouse g)))
@@ -1993,8 +1992,8 @@
     (overlay MTBOARD
              (make-rows (split-rows (game-current g))))))
 
-(@htdf get-lastmovepos)
-(@signature Game -> Pos or false)
+;; (@htdf get-lastmovepos)
+;; (@signature Game -> Pos or false)
 ;; produce the Pos of most recently modified Square if prev move data exists
 (check-expect (get-lastmovepos EASY) false)  ;no move data
 (check-expect (get-lastmovepos G5-ERR) 1)  ;wrong Val added at Pos 1
@@ -2004,7 +2003,7 @@
 
 ;(define (get-lastmovepos g) false)  ;stub
 
-(@template Game)
+;; (@template Game)
 (define (get-lastmovepos g)
   (cond [(empty? (game-prev g)) false]
         [else
@@ -2012,8 +2011,8 @@
                       (game-current g))]))
 
 
-(@htdf get-nextmovepos)
-(@signature Game -> Pos or false)
+;; (@htdf get-nextmovepos)
+;; (@signature Game -> Pos or false)
 ;; produce the Pos of next number to add with hint, if next move data exists
 ;; ASSUME: no errors logged and board-current is solveable (not empty? next)
 (check-expect (get-nextmovepos G5-DONE-W) false)  ;no move data, solved
@@ -2023,7 +2022,7 @@
 
 ;(define (get-nextmovepos g) false)  ;stub
 
-(@template Game)
+;; (@template Game)
 (define (get-nextmovepos g)
   (cond [(false? (game-next g)) false]  ;current state is unsolvable
         [(empty? (game-next g)) false]  ;already solved
@@ -2032,8 +2031,8 @@
                       (first (game-next g)))]))
 
 
-(@htdf get-diffpos)
-(@signature SmartBoard SmartBoard -> Pos)
+;; (@htdf get-diffpos)
+;; (@signature SmartBoard SmartBoard -> Pos)
 ;; produce the first Position where (list? sb1) and (list? sb2) don't match
 ;; ASSUME: sb1 has at least one Val square that sb2 lacks, or vice versa
 (check-expect (get-diffpos (cons (list 5) (rest SB5s))        SB5s) 0)
@@ -2048,7 +2047,7 @@
 
 ;(define (get-diffpos sb1 sb2) 0)  ;stub
 
-(@template (listof Square) accumulator)
+;; (@template (listof Square) accumulator)
 (define (get-diffpos sb1 sb2)
   ;; count is Pos  ; current Pos of Squares being compared in sb and sb-val
   (local [(define (get-diffpos losq1 losq2 count)
@@ -2064,8 +2063,8 @@
     (get-diffpos sb1 sb2 0)))
 
 
-(@htdf render-square)
-(@signature Square UserSquare? SqHighlight DisplayCell -> Image)
+;; (@htdf render-square)
+;; (@signature Square UserSquare? SqHighlight DisplayCell -> Image)
 ;; produce image of a grid square from info on user/base, highlight, and display
 (check-expect (render-square 5            false "error" "none")
               (overlay (text (number->string 5)
@@ -2089,7 +2088,7 @@
 
 ;(define (render-square sq u? sh dc) empty-image)  ;stub
 
-(@template Square)
+;; (@template Square)
 
 (define (render-square sq u? sh dc)
   (local [(define square-background
@@ -2113,8 +2112,8 @@
 
 
 
-(@htdf render-tiny)
-(@signature (listof Natural) DisplayCell -> Image)
+;; (@htdf render-tiny)
+;; (@signature (listof Natural) DisplayCell -> Image)
 ;; produce all tiny numbers present in list positioned in a Square
 ;; ASSUME: list is not empty; no duplicates; only Naturals [1-9]
 (check-expect (render-tiny (list 3) "none")
@@ -2146,7 +2145,7 @@
                 (overlay (text "8" TINY-TEXT-SIZE TINY-NUM-COLOR) TINY-CELL)
                 (overlay (text "9" TINY-TEXT-SIZE TINY-NUM-COLOR) TINY-CELL))))
 
-(@template (listof Natural) use-abstract-fn)
+;; (@template (listof Natural) use-abstract-fn)
 
 (define (render-tiny lon dc)
   (local [;; ??? make top-level constant?
@@ -2176,8 +2175,8 @@
 
 
 
-(@htdf render-buttons)
-(@signature Game -> Image)
+;; (@htdf render-buttons)
+;; (@signature Game -> Image)
 ;; produce image of buttons in the GUI in their current state
 (check-expect
  (render-buttons MTG)
@@ -2234,7 +2233,7 @@
  
 ;(define (render-buttons g) empty-image)  ;stub
 
-(@template use-abstract-fn)
+;; (@template use-abstract-fn)
 (define (render-buttons g)
   (local [(define lob0 (map lookup-button (game-buttons g)))
           (define separator (rectangle 0 BUTTON-MD "solid" "white"))
@@ -2255,8 +2254,8 @@
 
 
 
-(@htdf render-button)
-(@signature Button ButtonState -> Image)
+;; (@htdf render-button)
+;; (@signature Button ButtonState -> Image)
 ;; produce image of a single button in GUI in its current state
 (check-expect (render-button B-SHOW-CH "none")
               (overlay (text (btn-label B-SHOW-CH)
@@ -2276,7 +2275,7 @@
 
 ;(define (render-button b bs) empty-image)  ;stub
 
-(@template Button ButtonState)
+;; (@template Button ButtonState)
 (define (render-button b bs)
   (local [(define render-color
             (cond [(string=? "none" bs) (btn-color b)]
@@ -2291,8 +2290,8 @@
 
 ;; ==== Mouse Handling Helpers ====
 
-(@htdf mouse-xy)
-(@signature Integer Integer Game -> Game)
+;; (@htdf mouse-xy)
+;; (@signature Integer Integer Game -> Game)
 ;; produce updated Game state with new game-mouse values from x,y
 (check-expect (mouse-xy 30 40 EASY)
               (make-game (game-initial EASY)
@@ -2319,7 +2318,7 @@
 
 ;(define (mouse-xy x y g) g)  ;stub
 
-(@template Game)
+;; (@template Game)
 (define (mouse-xy x y g)
   (make-game (game-initial g) (game-current g) (game-solution g)
              (game-prev g) (game-next g) (game-errors g)
@@ -2327,8 +2326,8 @@
              (make-ms x y)))
 
 
-(@htdf in-board?)
-(@signature Integer Integer -> Boolean)
+;; (@htdf in-board?)
+;; (@signature Integer Integer -> Boolean)
 ;; produce true if x and y (overall coordinates) are in bounds of the board
 (check-expect (in-board? (+ BOARD-LEF -1) (+ BOARD-TOP (/ BOARD-W 2))) false)
 (check-expect (in-board? (+ BOARD-LEF  0) (+ BOARD-TOP (/ BOARD-W 2))) true)
@@ -2345,7 +2344,7 @@
 
 ;(define (in-board? x y) false)  ;stub
 
-(@template Integer)
+;; (@template Integer)
 (define (in-board? x y)
   (and (<= BOARD-LEF x)
        (< x BOARD-RIG)
@@ -2353,8 +2352,8 @@
        (< y BOARD-BOT)))
 
 
-(@htdf in-buttons?)
-(@signature Integer Integer -> Boolean)
+;; (@htdf in-buttons?)
+;; (@signature Integer Integer -> Boolean)
 ;; produce true if x and y (overall coordinates) are in bounds of the buttons
 (check-expect (in-buttons? (+ BUTTONS-LEF -1) CTR-Y) false)
 (check-expect (in-buttons? (+ BUTTONS-LEF  0) CTR-Y) true)
@@ -2377,7 +2376,7 @@
 
 ;(define (in-buttons? x y) false)  ;stub
 
-(@template Integer)
+;; (@template Integer)
 (define (in-buttons? x y)
   (and (<= BUTTONS-LEF x)
        (< x BUTTONS-RIG)
@@ -2385,8 +2384,8 @@
        (< y BUTTONS-BOT)))
 
 
-(@htdf board-click)
-(@signature Game Integer Integer -> Game)
+;; (@htdf board-click)
+;; (@signature Game Integer Integer -> Game)
 ;; produce game state for mouse click at x,y (in *board* coordinates)
 (check-expect (board-click HARD 0 0) (try-write-num HARD 0 0))  ;square full
 (check-expect (board-click EASY (* 8 SQUARE-W) (* 7 SQUARE-W))
@@ -2397,7 +2396,7 @@
 
 ;(define (board-click g x y) g)  ;stub
 
-(@template Game Mode)
+;; (@template Game Mode)
 (define (board-click g x y)
   (local [(define m (game-mode g))]
     (cond [(string=? m WRITE) (try-write-num g x y)]
@@ -2405,8 +2404,8 @@
           [(string=? m SOLVE) g])))
 
 
-(@htdf try-erase-num)
-(@signature Game Integer Integer -> Game)
+;; (@htdf try-erase-num)
+;; (@signature Game Integer Integer -> Game)
 ;; produce game with removed Val if erasing x,y (board coordinates) is allowed
 (check-expect (try-erase-num G5-ERR-W 0 0) G5-ERR-W)  ;x,y is a game-initial Val
 (check-expect (try-erase-num G5-ERR-W (* 2 SQUARE-W) 0) G5-ERR-W)  ;x,y is list
@@ -2417,7 +2416,7 @@
 
 ;(define (try-erase-num g x y) g)  ;stub
 
-(@template Game)
+;; (@template Game)
 (define (try-erase-num g x y)
   (local [(define pos (xy->pos x y))
           (define init-bd (game-initial g))
@@ -2429,8 +2428,8 @@
 
 ;??? add hover color for erasing erasable numbers
 
-(@htdf erase-num)
-(@signature Game Pos -> Game)
+;; (@htdf erase-num)
+;; (@signature Game Pos -> Game)
 ;; produce game state by erasing the Val at Pos
 ;; ASSUME: square at Pos is Val not list; square was unfilled on initial board
 (check-expect (erase-num G5-ERR-W 1)  ;has 1 error, erase error at Pos 1
@@ -2492,7 +2491,7 @@
 
 ;(define (erase-num g p) g)  ;stub
 
-(@template Game)
+;; (@template Game)
 (define (erase-num g p)
   (local [(define new-bd (erase-square (game-current g) p))
           (define updated-errors (remove p (game-errors g)))]
@@ -2509,8 +2508,8 @@
                (game-buttons g) (game-mouse   g))))
 
 
-(@htdf try-write-num)
-(@signature Game Integer Integer -> Game)
+;; (@htdf try-write-num)
+;; (@signature Game Integer Integer -> Game)
 ;; produce game with new Val if writing it at x,y (board coordinates) is allowed
 (check-expect (try-write-num G5-LAST1 0 0)  ;P0 cell-1, initial
               G5-LAST1)
@@ -2527,7 +2526,7 @@
 
 ;(define (try-write-num g x y) g)  ;stub
 
-(@template Game)
+;; (@template Game)
 (define (try-write-num g x y)
   (local [(define pos (xy->pos x y))
           (define val (xy->tinyval (remainder x SQUARE-W)
@@ -2540,8 +2539,8 @@
         g)))  ;do nothing
 
 
-(@htdf write-num)
-(@signature Game Val Pos -> Game)
+;; (@htdf write-num)
+;; (@signature Game Val Pos -> Game)
 ;; produce game state by adding new Val to the board at Pos
 ;; ASSUME: Pos on board contains a (listof Val)
 (check-expect (write-num G5-LAST2 3 1) G5-LAST1)  ;correct move
@@ -2593,7 +2592,7 @@
 
 ;(define (write-num g v p) EASY)  ;stub
 
-(@template Game)
+;; (@template Game)
 (define (write-num g v p)
   (local [(define old-board (game-current g))
           (define is-valid-move? (member? v (list-ref old-board p)))
@@ -2623,8 +2622,8 @@
 
 
 ;!!! don't need?
-(@htdf fill-placement-steps)
-(@signature (listof SmartBoard) Val Pos -> (listof SmartBoard))
+;; (@htdf fill-placement-steps)
+;; (@signature (listof SmartBoard) Val Pos -> (listof SmartBoard))
 ;; produce list of solve steps with Val at Pos in all SmartBoards, no duplicates
 (check-expect
  (fill-placement-steps
@@ -2645,7 +2644,7 @@
 
 ;(define (fill-placement-steps losb0 val p) empty)  ;stub
 
-(@template (listof SmartBoard) accumulator)
+;; (@template (listof SmartBoard) accumulator)
 (define (fill-placement-steps losb0 v p)
   (local [(define (fill-steps losb rsf)
             (cond [(empty? losb)
@@ -2665,8 +2664,8 @@
     (fill-steps losb0 empty)))
 
 
-(@htdf buttons-click)
-(@signature Game Integer Integer -> Game)
+;; (@htdf buttons-click)
+;; (@signature Game Integer Integer -> Game)
 ;; produce game state for mouse click at x,y (in *button* coordinates)
 (check-expect (buttons-click EASY-E 0 0)
               (click-write EASY))
@@ -2681,7 +2680,7 @@
 
 ;(define (buttons-click g x y) g)  ;stub
 
-(@template Game)
+;; (@template Game)
 (define (buttons-click g x y)
   (local [(define button-index (xy->buttonindex x y))
           (define (get-func i)
@@ -2692,8 +2691,8 @@
         g)))
 
 
-(@htdf click-undo)
-(@signature Game -> Game)
+;; (@htdf click-undo)
+;; (@signature Game -> Game)
 ;; produce game state after undoing a move, if prev move(s) are known.
 (check-expect (click-undo EASY-E) EASY-E)  ;no prev moves
 (check-expect (click-undo G5-ERR-W)  ;undo only error
@@ -2778,7 +2777,7 @@
 
 ;(define (click-undo g) g)  ;stub
 
-(@template Game)
+;; (@template Game)
 (define (click-undo g)
   (cond [(empty? (game-prev g)) g]  ;no prev moves
         [else  ;undo a move
@@ -2791,8 +2790,8 @@
                (undo-placemove g pos)))]))
 
 
-(@htdf undo-placemove)
-(@signature Game Pos -> Game)
+;; (@htdf undo-placemove)
+;; (@signature Game Pos -> Game)
 ;; produce new game state after undoing the most recent placement at Pos
 ;; ASSUME: at least one previous move is logged - (game-prev g) is not empty
 ;; ASSUME: Pos p is Val on (game-current g) but list on (first (game-prev g))
@@ -2831,7 +2830,7 @@
 
 ;(define (undo-placemove g p) g)  ;stub
 
-(@template Game)
+;; (@template Game)
 (define (undo-placemove g p)
   (local [(define undone-board (first (game-prev g)))
           (define updated-errors (remove p (game-errors g)))]
@@ -2846,8 +2845,8 @@
                (game-buttons g) (game-mouse   g))))
 
 
-(@htdf undo-erasemove)
-(@signature Game Pos -> Game)
+;; (@htdf undo-erasemove)
+;; (@signature Game Pos -> Game)
 ;; produce new game state after undoing the most recent erasure at Pos
 ;; ASSUME: at least one previous move is logged - (game-prev g) is not empty
 ;; ASSUME: Pos p is list on (game-current g) but Val on (first (game-prev g))
@@ -2937,7 +2936,7 @@
 
 ;(define (undo-erasemove g p) g)  ;stub
 
-(@template Game)
+;; (@template Game)
 
 (define (undo-erasemove g p)  ;!!! FINISH!
   (local [(define curr-board (game-current g))
@@ -2972,8 +2971,8 @@
                (game-buttons g) (game-mouse   g))))
 
 
-(@htdf click-hint)
-(@signature Game -> Game)
+;; (@htdf click-hint)
+;; (@signature Game -> Game)
 ;; produce game state after using a hint, if board is solveable.
 (check-expect (click-hint (bd->game BD7)) (bd->game BD7))  ;unsolvable
 (check-expect (click-hint G5-DONE-W) G5-DONE-W)  ;already solved
@@ -3003,15 +3002,15 @@
 
 ;(define (click-hint g) g)  ;stub
 
-(@template Game)
+;; (@template Game)
 (define (click-hint g)
   (cond [(false? (game-solution g))                  g]
         [(equal? (game-current g) (game-solution g)) g]
         [else                           (solve-step g)]))
 
 
-(@htdf click-solve)
-(@signature Game -> Game)
+;; (@htdf click-solve)
+;; (@signature Game -> Game)
 ;; switch game into SOLVE Mode (autosolve), if initial board solveable.
 (check-expect (click-solve (bd->game BD7)) (bd->game BD7))  ;unsolvable
 (check-expect (click-solve G5-DONE-W) G5-DONE-W)
@@ -3020,7 +3019,7 @@
 
 ;(define (click-solve g) g)  ;stub
 
-(@template Game)
+;; (@template Game)
 (define (click-solve g)
   (cond [(false? (game-solution g))                  g]
         [(equal? (game-current g) (game-solution g)) g]
@@ -3030,8 +3029,8 @@
                     SOLVE (game-options g) (game-buttons g) (game-mouse g))]))
 
 
-(@htdf click-reset)
-(@signature Game -> Game)
+;; (@htdf click-reset)
+;; (@signature Game -> Game)
 ;; produce game after resetting to its initial state
 (check-expect (click-reset EASY) EASY)  ;already in initial state
 (check-expect (click-reset (write-num EASY 3 10)) EASY)  ;undo one move
@@ -3041,13 +3040,13 @@
 
 ;(define (click-reset g) g)  ;stub
 
-(@template Game)
+;; (@template Game)
 (define (click-reset g)
   (sb->game (game-initial g)))
 
 
-(@htdf click-new)
-(@signature Game -> Game)
+;; (@htdf click-new)
+;; (@signature Game -> Game)
 ;; produce game after resetting with a different initial puzzle
 (check-random (click-new (sb->game SB3-raw))
               (sb->game (list-ref PUZZLE-BANK (random (length PUZZLE-BANK)))))
@@ -3073,7 +3072,7 @@
 
 ;(define (click-new g) g)  ;stub
 
-(@template Game)
+;; (@template Game)
 (define (click-new g)
   (local [(define list-length (length PUZZLE-BANK))
           (define n (random list-length))
@@ -3084,8 +3083,8 @@
                   nth-puzzle))))
 
 
-(@htdf click-choices)
-(@signature Game -> Game)
+;; (@htdf click-choices)
+;; (@signature Game -> Game)
 ;; produce game state after toggling show choices in Options.
 (check-expect
  (click-choices EASY)
@@ -3107,7 +3106,7 @@
 
 ;(define (click-choices g) g)  ;stub
 
-(@template Game)
+;; (@template Game)
 (define (click-choices g)
   (make-game (game-initial g) (game-current g) (game-solution g)
              (game-prev g) (game-next g) (game-errors g) (game-mode g)
@@ -3117,8 +3116,8 @@
              (game-buttons g) (game-mouse g)))
 
 
-(@htdf click-errors)
-(@signature Game -> Game)
+;; (@htdf click-errors)
+;; (@signature Game -> Game)
 ;; produce game state after toggling show errors in Options.
 (check-expect
  (click-errors HARD)
@@ -3140,7 +3139,7 @@
 
 ;(define (click-errors g) g)  ;stub
 
-(@template Game)
+;; (@template Game)
 (define (click-errors g)
   (make-game (game-initial g) (game-current g) (game-solution g)
              (game-prev g) (game-next g) (game-errors g) (game-mode g)
@@ -3150,38 +3149,38 @@
              (game-buttons g) (game-mouse g)))
 
 
-(@htdf click-write)
-(@signature Game -> Game)
+;; (@htdf click-write)
+;; (@signature Game -> Game)
 ;; produce game after switching into WRITE Mode.
 (check-expect (click-write EASY) EASY)
 (check-expect (click-write HARD-E) HARD)
 
 ;(define (click-write g) g)  ;stub
 
-(@template Game)
+;; (@template Game)
 (define (click-write g)
   (make-game (game-initial g) (game-current g) (game-solution g)
              (game-prev g) (game-next g) (game-errors g)
              WRITE (game-options g) (game-buttons g) (game-mouse g)))
 
 
-(@htdf click-erase)
-(@signature Game -> Game)
+;; (@htdf click-erase)
+;; (@signature Game -> Game)
 ;; produce game after switching into ERASE Mode.
 (check-expect (click-erase EASY) EASY-E)
 (check-expect (click-erase HARD-E) HARD-E)
 
 ;(define (click-erase g) g)  ;stub
 
-(@template Game)
+;; (@template Game)
 (define (click-erase g)
   (make-game (game-initial g) (game-current g) (game-solution g)
              (game-prev g) (game-next g) (game-errors g)
              ERASE (game-options g) (game-buttons g) (game-mouse g)))
 
 
-(@htdf xy->pos)
-(@signature Integer Integer -> Pos)
+;; (@htdf xy->pos)
+;; (@signature Integer Integer -> Pos)
 ;; produce the Pos of the square at the location of x,y (board coordinates)
 ;; ASSUME 0 <= x,y < BOARD-W
 (check-expect (xy->pos 0 0) 0)
@@ -3197,13 +3196,13 @@
 
 ;(define (xy->pos x y) 0)  ;stub
 
-(@template Integer)
+;; (@template Integer)
 (define (xy->pos x y)
   (+ (* (quotient y SQUARE-W) 9) (quotient x SQUARE-W)))
 
 
-(@htdf xy->tinyval)
-(@signature Integer Integer -> Val)
+;; (@htdf xy->tinyval)
+;; (@signature Integer Integer -> Val)
 ;; produce Val of the tiny cell at the location of x,y (square coordinates)
 ;; ASSUME 0 <= x,y SQUARE-W
 (check-expect (xy->tinyval 0 0) 1)
@@ -3219,13 +3218,13 @@
 
 ;(define (xy->tinyval x y) 1)  ;stub
 
-(@template Integer)
+;; (@template Integer)
 (define (xy->tinyval x y)
   (+ 1 (* (quotient y CELL-W) 3) (quotient x CELL-W)))
 
 
-(@htdf xy->buttonindex)
-(@signature Integer Integer -> Natural or false)
+;; (@htdf xy->buttonindex)
+;; (@signature Integer Integer -> Natural or false)
 ;; produce index of the button at the location of x,y (buttons coordinates)
 ;; ASSUME 0 <= x < BUTTONS-W and 0 <= y
 (check-expect (xy->buttonindex 0 0) 0)
@@ -3241,7 +3240,7 @@
 
 ;(define (xy->buttonindex x y) false)  ;stub
 
-(@template Integer)
+;; (@template Integer)
 (define (xy->buttonindex x y)
   (local [(define spacing (+ BUTTON-H BUTTON-MD))
           (define index-zone (quotient y spacing))]
@@ -3254,8 +3253,8 @@
           [else false])))
 
 
-(@htdf lookup-button)
-(@signature ButtonID -> Button)
+;; (@htdf lookup-button)
+;; (@signature ButtonID -> Button)
 ;; produce the static button data corresponding to a given ID
 (check-expect (lookup-button "b-undo") B-UNDO)
 (check-expect (lookup-button "b-shower") B-SHOW-ER)
@@ -3263,7 +3262,7 @@
 
 ;(define (lookup-button id) B-HINT)  ;stub
 
-(@template (listof Button) encapsulated)
+;; (@template (listof Button) encapsulated)
 (define (lookup-button id)
   (local [(define (lookup-button lob)
             (cond [(empty? lob) (error "No Button exists with this ID")]
@@ -3274,8 +3273,8 @@
     (lookup-button LIST-BUTTONS)))
 
 
-(@htdf btnstate)
-(@signature Boolean Boolean -> ButtonState)
+;; (@htdf btnstate)
+;; (@signature Boolean Boolean -> ButtonState)
 ;; produce ButtonState of a button given booleans for pressed? and mouse hover
 (check-expect (btnstate false false) "none")
 (check-expect (btnstate true  false) "click")
@@ -3284,15 +3283,15 @@
 
 ;(define (btnstate pressed? hover?) "none")  ;stub
 
-(@template Boolean)
+;; (@template Boolean)
 (define (btnstate pressed? hover?)
   (cond [pressed? "click"]
         [hover?   "hover"]
         [else      "none"]))
 
 
-(@htdf xy->buttonid)
-(@signature Game Integer Integer -> ButtonID or false)
+;; (@htdf xy->buttonid)
+;; (@signature Game Integer Integer -> ButtonID or false)
 ;; produce the ButtonID of button located at coordinates x,y
 (check-expect (xy->buttonid EASY 0 0) false)
 (check-expect (xy->buttonid HARD (sub1 BUTTONS-LEF) CTR-Y) false)
@@ -3304,7 +3303,7 @@
 
 ;(define (xy->buttonid g x y) false)  ;stub
 
-(@template Integer try-catch)
+;; (@template Integer try-catch)
 (define (xy->buttonid g x y)
   (local [(define num-buttons (length (game-buttons g)))
           (define i (if (in-buttons? x y)
@@ -3319,8 +3318,8 @@
         try)))
 
 
-(@htdf xy->boardpos)
-(@signature Integer Integer -> Pos or false)
+;; (@htdf xy->boardpos)
+;; (@signature Integer Integer -> Pos or false)
 ;; produce the Pos of the board square located at coordinates x,y
 (check-expect (xy->boardpos 0 0) false)
 (check-expect (xy->boardpos (sub1 BOARD-LEF) CTR-Y) false)
@@ -3334,7 +3333,7 @@
 
 ;(define (xy->boardpos x y) false)  ;stub
 
-(@template Integer)
+;; (@template Integer)
 (define (xy->boardpos x y)
   (if (in-board? x y)
       (xy->pos (- x BOARD-LEF) (- y BOARD-TOP))
