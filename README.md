@@ -59,7 +59,7 @@ _**HOW TO INSTALL:**_ Install the latest version of [DrRacket](https://racket-la
 #### To run .exe release file:
 - Windows 10+
 
-_**HOW TO INSTALL:**_ Download the latest .exe release from [this repo folder](/play-sudoku/), then run the application.
+_**HOW TO INSTALL:**_ Download the latest .exe release from [this repo folder](https://github.com/Jonqora/racket-sudoku/tree/master/play-sudoku), then run the application.
 
 ### USING THE PROGRAM
 - On running the program, the game interface window will appear. Interact with it using the mouse to play.
